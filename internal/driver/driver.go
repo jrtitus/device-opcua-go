@@ -186,16 +186,17 @@ func (d *Driver) HandleWriteCommands(deviceName string, protocols map[string]mod
 	}
 
 	ctx := context.Background()
-	c := opcua.NewClient(endpoint, opcua.SecurityMode(ua.MessageSecurityModeNone))
-	if err := c.Connect(ctx); err != nil {
+	client := opcua.NewClient(endpoint, opcua.SecurityMode(ua.MessageSecurityModeNone))
+	if err := client.Connect(ctx); err != nil {
 		d.Logger.Warnf("Driver.HandleWriteCommands: Failed to create OPCUA client, %s", err)
 		return err
 	}
+	defer client.Close()
 
 	for _, req := range reqs {
 		// handle every reqs every params
 		for _, param := range params {
-			err := d.handleWriteCommandRequest(c, req, param)
+			err := d.handleWriteCommandRequest(client, req, param)
 			if err != nil {
 				d.Logger.Errorf("Driver.HandleWriteCommands: Handle write commands failed: %v", err)
 				return err
