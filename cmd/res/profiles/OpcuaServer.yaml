@@ -36,7 +36,21 @@ deviceResources:
       valueType: "String"
       readWrite: "R"
     attributes:
-      { namespace: "2", method: "Defaults", object: "", isMethod: true }
+      { namespace: "5", method: "Defaults", object: "", isMethod: true }
+  -
+    name: "AddNodeMethod"
+    description: "Add a Node to the OPCUA Server"
+    properties:
+      valueType: "String"
+      readWrite: "R"
+    attributes:
+      {
+        namespace: "5",
+        method: "NewNode",
+        object: "",
+        isMethod: true,
+        inputMap: [ "MyNewNode", "NewNode0", "int32" ],
+      }
 
 
 deviceCommands:
@@ -58,3 +72,9 @@ deviceCommands:
     readWrite: "R"
     resourceOperations:
       - { deviceResource: "SetDefaultsMethod" }
+  -
+    name: "AddNode"
+    isHidden: false
+    readWrite: "R"
+    resourceOperations:
+      - { deviceResource: "AddNodeMethod" }

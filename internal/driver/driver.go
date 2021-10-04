@@ -182,6 +182,8 @@ func makeReadRequest(deviceClient *opcua.Client, req sdkModel.CommandRequest, id
 }
 
 func makeMethodCall(deviceClient *opcua.Client, req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
+	var inputs []*ua.Variant
+
 	objectID, err := buildObjectID(req.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
@@ -200,9 +202,21 @@ func makeMethodCall(deviceClient *opcua.Client, req sdkModel.CommandRequest) (*s
 		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
 	}
 
+	inputMap, ok := req.Attributes[INPUTMAP]
+	if ok {
+		imElements := inputMap.([]interface{})
+		if len(imElements) > 0 {
+			inputs = make([]*ua.Variant, len(imElements))
+			for i := 0; i < len(imElements); i++ {
+				inputs[i] = ua.MustVariant(imElements[i].(string))
+			}
+		}
+	}
+
 	request := &ua.CallMethodRequest{
-		ObjectID: oid,
-		MethodID: mid,
+		ObjectID:       oid,
+		MethodID:       mid,
+		InputArguments: inputs,
 	}
 
 	resp, err := deviceClient.Call(request)

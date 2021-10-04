@@ -24,4 +24,6 @@ const (
 	OBJECT = "object"
 	// METHOD attribute
 	METHOD = "method"
+	// INPUTMAP attribute
+	INPUTMAP = "inputMap"
 )
