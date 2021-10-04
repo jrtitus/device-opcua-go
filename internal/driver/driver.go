@@ -142,7 +142,7 @@ func (d *Driver) handleReadCommandRequest(deviceClient *opcua.Client, req sdkMod
 		result, err = makeMethodCall(deviceClient, req)
 		d.Logger.Infof("Method command finished: %v", result)
 	} else {
-		nodeID, err := buildNodeID(req.Attributes)
+		nodeID, err := buildNodeID(req.Attributes, SYMBOL)
 		if err != nil {
 			return result, fmt.Errorf("Driver.handleReadCommands: %v", err)
 		}
@@ -184,7 +184,7 @@ func makeReadRequest(deviceClient *opcua.Client, req sdkModel.CommandRequest, id
 func makeMethodCall(deviceClient *opcua.Client, req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
 	var inputs []*ua.Variant
 
-	objectID, err := buildObjectID(req.Attributes)
+	objectID, err := buildNodeID(req.Attributes, OBJECT)
 	if err != nil {
 		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
 	}
@@ -193,7 +193,7 @@ func makeMethodCall(deviceClient *opcua.Client, req sdkModel.CommandRequest) (*s
 		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
 	}
 
-	methodID, err := buildMethodID(req.Attributes)
+	methodID, err := buildNodeID(req.Attributes, METHOD)
 	if err != nil {
 		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
 	}
@@ -271,7 +271,7 @@ func (d *Driver) HandleWriteCommands(deviceName string, protocols map[string]mod
 
 func (d *Driver) handleWriteCommandRequest(deviceClient *opcua.Client, req sdkModel.CommandRequest,
 	param *sdkModel.CommandValue) error {
-	nodeID, err := buildNodeID(req.Attributes)
+	nodeID, err := buildNodeID(req.Attributes, SYMBOL)
 	if err != nil {
 		return fmt.Errorf("Driver.handleWriteCommands: %v", err)
 	}
@@ -323,37 +323,15 @@ func (d *Driver) Stop(force bool) error {
 	return nil
 }
 
-func buildNodeID(attrs map[string]interface{}) (string, error) {
+func buildNodeID(attrs map[string]interface{}, sKey string) (string, error) {
 	if _, ok := attrs[NAMESPACE]; !ok {
 		return "", fmt.Errorf("Attribute %s does not exist", NAMESPACE)
 	}
-	if _, ok := attrs[SYMBOL]; !ok {
-		return "", fmt.Errorf("Attribute %s does not exist", SYMBOL)
+	if _, ok := attrs[sKey]; !ok {
+		return "", fmt.Errorf("Attribute %s does not exist", sKey)
 	}
 
-	return fmt.Sprintf("ns=%s;s=%s", attrs[NAMESPACE].(string), attrs[SYMBOL].(string)), nil
-}
-
-func buildObjectID(attrs map[string]interface{}) (string, error) {
-	if _, ok := attrs[NAMESPACE]; !ok {
-		return "", fmt.Errorf("Attribute %s does not exist", NAMESPACE)
-	}
-	if _, ok := attrs[OBJECT]; !ok {
-		return "", fmt.Errorf("Attribute %s does not exist", OBJECT)
-	}
-
-	return fmt.Sprintf("ns=%s;s=%s", attrs[NAMESPACE].(string), attrs[OBJECT].(string)), nil
-}
-
-func buildMethodID(attrs map[string]interface{}) (string, error) {
-	if _, ok := attrs[NAMESPACE]; !ok {
-		return "", fmt.Errorf("Attribute %s does not exist", NAMESPACE)
-	}
-	if _, ok := attrs[METHOD]; !ok {
-		return "", fmt.Errorf("Attribute %s does not exist", METHOD)
-	}
-
-	return fmt.Sprintf("ns=%s;s=%s", attrs[NAMESPACE].(string), attrs[METHOD].(string)), nil
+	return fmt.Sprintf("ns=%s;s=%s", attrs[NAMESPACE].(string), attrs[sKey].(string)), nil
 }
 
 func newResult(req sdkModel.CommandRequest, reading interface{}) (*sdkModel.CommandValue, error) {
