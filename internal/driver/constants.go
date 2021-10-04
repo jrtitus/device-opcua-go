@@ -20,4 +20,8 @@ const (
 	NAMESPACE = "namespace"
 	// SYMBOL attribute
 	SYMBOL = "symbol"
+	// OBJECT attribute
+	OBJECT = "object"
+	// METHOD attribute
+	METHOD = "method"
 )

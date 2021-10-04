@@ -29,6 +29,15 @@ deviceResources:
       maximum: "100.00"
     attributes:
       { namespace: "5", symbol: "Random1" }
+  -
+    name: "SetDefaultsMethod"
+    description: "Set all variables to their default values"
+    properties:
+      valueType: "String"
+      readWrite: "R"
+    attributes:
+      { namespace: "2", method: "Defaults", object: "", isMethod: true }
+
 
 deviceCommands:
   -
@@ -43,3 +52,9 @@ deviceCommands:
     readWrite: "R"
     resourceOperations:
       - { deviceResource: "Random1", defaultValue: "0.00" }
+  -
+    name: "SetDefaults"
+    isHidden: false
+    readWrite: "R"
+    resourceOperations:
+      - { deviceResource: "SetDefaultsMethod" }

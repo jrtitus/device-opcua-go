@@ -9,6 +9,7 @@ This repository is a Go-based EdgeX Foundry Device Service which uses OPC-UA pro
 1. Subscribe data from OPCUA endpoint (TBD)
 2. Execute read command
 3. Execute write command
+4. Execute method (using Read command of device SDK)
 
 ## Prerequisite
 
@@ -50,11 +51,9 @@ Modify `configuration.toml` file found under the `./cmd/res` folder if needed
 
 ## Devic Profile
 
-A Device Profile can be thought of as a template of a type or classification of Device.
+A Device Profile can be thought of as a template of a type or classification of a Device.
 
-Write device profile for your own devices, define deviceResources, deviceCommands and coreCommands. Please refer to `cmd/res/profiles/OpcuaServer.yaml`
-
-Tips: name in deviceResources should consistent with OPCUA nodeid
+Write a device profile for your own devices; define deviceResources and deviceCommands. Please refer to `cmd/res/profiles/OpcuaServer.yaml`
 
 ## Installation and Execution
 

@@ -126,20 +126,40 @@ func (d *Driver) HandleReadCommands(deviceName string, protocols map[string]mode
 	return responses, err
 }
 
-func (d *Driver) handleReadCommandRequest(deviceClient *opcua.Client,
-	req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
+func (d *Driver) handleReadCommandRequest(deviceClient *opcua.Client, req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
 	var result = &sdkModel.CommandValue{}
-	nodeID, err := buildNodeID(req.Attributes)
-	if err != nil {
-		return result, fmt.Errorf("Driver.handleReadCommands: %v", err)
+	var err error
+
+	var isMethod bool
+	_, ok := req.Attributes["isMethod"]
+	if !ok {
+		isMethod = false
+	} else {
+		isMethod = req.Attributes["isMethod"].(bool)
 	}
 
-	// get NewNodeID
-	id, err := ua.ParseNodeID(nodeID)
-	if err != nil {
-		return result, fmt.Errorf("Driver.handleReadCommands: Invalid node id=%s; %v", nodeID, err)
+	if isMethod {
+		result, err = makeMethodCall(deviceClient, req)
+		d.Logger.Infof("Method command finished: %v", result)
+	} else {
+		nodeID, err := buildNodeID(req.Attributes)
+		if err != nil {
+			return result, fmt.Errorf("Driver.handleReadCommands: %v", err)
+		}
+
+		// get NewNodeID
+		id, err := ua.ParseNodeID(nodeID)
+		if err != nil {
+			return result, fmt.Errorf("Driver.handleReadCommands: Invalid node id=%s; %v", nodeID, err)
+		}
+		result, err = makeReadRequest(deviceClient, req, id)
+		d.Logger.Infof("Read command finished: %v", result)
 	}
 
+	return result, err
+}
+
+func makeReadRequest(deviceClient *opcua.Client, req sdkModel.CommandRequest, id *ua.NodeID) (*sdkModel.CommandValue, error) {
 	// make and execute ReadRequest
 	request := &ua.ReadRequest{
 		MaxAge: 2000,
@@ -150,23 +170,50 @@ func (d *Driver) handleReadCommandRequest(deviceClient *opcua.Client,
 	}
 	resp, err := deviceClient.Read(request)
 	if err != nil {
-		d.Logger.Errorf("Driver.handleReadCommands: Read failed: %s", err)
+		return nil, fmt.Errorf("Driver.handleReadCommands: Read failed: %s", err)
 	}
 	if resp.Results[0].Status != ua.StatusOK {
-		d.Logger.Errorf("Driver.handleReadCommands: Status not OK: %v", resp.Results[0].Status)
-
+		return nil, fmt.Errorf("Driver.handleReadCommands: Status not OK: %v", resp.Results[0].Status)
 	}
 
 	// make new result
 	reading := resp.Results[0].Value.Value()
-	result, err = newResult(req, reading)
+	return newResult(req, reading)
+}
+
+func makeMethodCall(deviceClient *opcua.Client, req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
+	objectID, err := buildObjectID(req.Attributes)
 	if err != nil {
-		return result, err
+		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
+	}
+	oid, err := ua.ParseNodeID(objectID)
+	if err != nil {
+		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
 	}
 
-	d.Logger.Infof("Read command finished: %v", result)
+	methodID, err := buildMethodID(req.Attributes)
+	if err != nil {
+		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
+	}
+	mid, err := ua.ParseNodeID(methodID)
+	if err != nil {
+		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
+	}
 
-	return result, err
+	request := &ua.CallMethodRequest{
+		ObjectID: oid,
+		MethodID: mid,
+	}
+
+	resp, err := deviceClient.Call(request)
+	if err != nil {
+		return nil, fmt.Errorf("Driver.handleReadCommands: Method call failed: %s", err)
+	}
+	if resp.StatusCode != ua.StatusOK {
+		return nil, fmt.Errorf("Driver.handleReadCommands: Method status not OK: %v", resp.StatusCode)
+	}
+
+	return newResult(req, resp.OutputArguments[0].Value())
 }
 
 // HandleWriteCommands passes a slice of CommandRequest struct each representing
@@ -271,6 +318,28 @@ func buildNodeID(attrs map[string]interface{}) (string, error) {
 	}
 
 	return fmt.Sprintf("ns=%s;s=%s", attrs[NAMESPACE].(string), attrs[SYMBOL].(string)), nil
+}
+
+func buildObjectID(attrs map[string]interface{}) (string, error) {
+	if _, ok := attrs[NAMESPACE]; !ok {
+		return "", fmt.Errorf("Attribute %s does not exist", NAMESPACE)
+	}
+	if _, ok := attrs[OBJECT]; !ok {
+		return "", fmt.Errorf("Attribute %s does not exist", OBJECT)
+	}
+
+	return fmt.Sprintf("ns=%s;s=%s", attrs[NAMESPACE].(string), attrs[OBJECT].(string)), nil
+}
+
+func buildMethodID(attrs map[string]interface{}) (string, error) {
+	if _, ok := attrs[NAMESPACE]; !ok {
+		return "", fmt.Errorf("Attribute %s does not exist", NAMESPACE)
+	}
+	if _, ok := attrs[METHOD]; !ok {
+		return "", fmt.Errorf("Attribute %s does not exist", METHOD)
+	}
+
+	return fmt.Sprintf("ns=%s;s=%s", attrs[NAMESPACE].(string), attrs[METHOD].(string)), nil
 }
 
 func newResult(req sdkModel.CommandRequest, reading interface{}) (*sdkModel.CommandValue, error) {
