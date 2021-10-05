@@ -130,37 +130,30 @@ func (d *Driver) handleReadCommandRequest(deviceClient *opcua.Client, req sdkMod
 	var result = &sdkModel.CommandValue{}
 	var err error
 
-	var isMethod bool
-	_, ok := req.Attributes["isMethod"]
-	if !ok {
-		isMethod = false
-	} else {
-		isMethod = req.Attributes["isMethod"].(bool)
-	}
+	_, isMethod := req.Attributes[METHOD]
 
 	if isMethod {
 		result, err = makeMethodCall(deviceClient, req)
 		d.Logger.Infof("Method command finished: %v", result)
 	} else {
-		nodeID, err := buildNodeID(req.Attributes, SYMBOL)
-		if err != nil {
-			return result, fmt.Errorf("Driver.handleReadCommands: %v", err)
-		}
-
-		// get NewNodeID
-		id, err := ua.ParseNodeID(nodeID)
-		if err != nil {
-			return result, fmt.Errorf("Driver.handleReadCommands: Invalid node id=%s; %v", nodeID, err)
-		}
-		result, err = makeReadRequest(deviceClient, req, id)
+		result, err = makeReadRequest(deviceClient, req)
 		d.Logger.Infof("Read command finished: %v", result)
 	}
 
 	return result, err
 }
 
-func makeReadRequest(deviceClient *opcua.Client, req sdkModel.CommandRequest, id *ua.NodeID) (*sdkModel.CommandValue, error) {
-	// make and execute ReadRequest
+func makeReadRequest(deviceClient *opcua.Client, req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
+	nodeID, err := buildNodeID(req.Attributes, SYMBOL)
+	if err != nil {
+		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
+	}
+
+	id, err := ua.ParseNodeID(nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("Driver.handleReadCommands: Invalid node id=%s; %v", nodeID, err)
+	}
+
 	request := &ua.ReadRequest{
 		MaxAge: 2000,
 		NodesToRead: []*ua.ReadValueID{
