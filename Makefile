@@ -1,45 +1,47 @@
-.PHONY: build test clean docker run
+.PHONY: build clean_build clean_tests docker run test
 
-GO=go
-CGO=CGO_ENABLED=1 GO111MODULE=on $(GO)
+GO=GO111MODULE=on go
+GOCGO=CGO_ENABLED=1 $(GO)
 
 MICROSERVICES=cmd/device-opcua
 
 .PHONY: $(MICROSERVICES)
 
-VERSION=$(shell cat ./VERSION 2>/dev/null || echo 0.0.0)
+VERSION=$(shell cat ./VERSION)
+GIT_SHA=$(shell git rev-parse HEAD)
+CURR_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 GOFLAGS=-ldflags "-X github.com/edgexfoundry/device-opcua-go.Version=$(VERSION)"
-
-GIT_SHA=$(shell git rev-parse HEAD)
-
-TEST_OUT=test-artifacts
+TEST_ARTIFACTS=test-artifacts
 
 build: $(MICROSERVICES)
-	$(CGO) install -tags=safe
+	$(GOCGO) install -tags=safe
 
-cmd/device-opcua:
-	$(CGO) build $(GOFLAGS) -o $@ ./cmd
+cmd/device-opcua: clean_build
+	$(GOCGO) build $(GOFLAGS) -o $@ ./cmd
 
-test:
-	$(GO) install github.com/jstemmer/go-junit-report@v0.9.1
-	$(GO) install github.com/axw/gocov/gocov@v1.0.0
-	$(GO) install github.com/AlekSi/gocov-xml@v1.0.0
-	$(GO) install github.com/jandelgado/gcov2lcov@v1.0.5
-	rm -rf $(TEST_OUT)
-	mkdir $(TEST_OUT)
-	$(GO) test -v ./... -coverprofile=$(TEST_OUT)/cover.out | go-junit-report > $(TEST_OUT)/report.xml
-	gocov convert $(TEST_OUT)/cover.out | gocov-xml > $(TEST_OUT)/coverage.xml
-	gcov2lcov -infile=$(TEST_OUT)/cover.out -outfile=$(TEST_OUT)/coverage.lcov
-
-clean:
+clean_build:
 	rm -f $(MICROSERVICES)
 
-docker:
-	docker build \
+clean_tests:
+	rm -rf $(TEST_ARTIFACTS)
+
+docker: clean_build
+	DOCKER_BUILDKIT=1 docker build \
 		--label "git_sha=$(GIT_SHA)" \
-		-t edgexfoundry/device-opcua-go:$(VERSION)-dev \
+		-t edgexfoundry/device-opcua-go:$(VERSION) \
+		--target prod \
+		--pull \
 		.
 
 run:
 	cd bin && ./edgex-launch.sh
+
+test: clean_tests
+	mkdir -p $(TEST_ARTIFACTS)
+	DOCKER_BUILDKIT=1 docker build \
+		-t device-opcua-go:$(VERSION)-test \
+		--target tester \
+		--build-arg TEST_ARTIFACTS=$(TEST_ARTIFACTS) \
+		.
+	docker run --rm -v $(CURR_DIR)/$(TEST_ARTIFACTS):/device-opcua-go/$(TEST_ARTIFACTS) device-opcua-go:$(VERSION)-test

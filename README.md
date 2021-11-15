@@ -86,9 +86,7 @@ The mock server defines the following attributes:
 All attributes are defined in `ns=2`.
 
 ```bash
-# Install requirements (if necessary)
-python3 -m pip install opcua
-# Run tests
+# Tests run in a container
 make test
 ```
 

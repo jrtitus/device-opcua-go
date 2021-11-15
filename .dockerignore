@@ -3,4 +3,13 @@
 cmd/device-opcua
 cmd/device-opcua-arm64
 vendor
+test-artifacts
+
 .idea
+.git
+.github
+.gitignore
+.vscode
+.dockerignore
+
+Dockerfile
