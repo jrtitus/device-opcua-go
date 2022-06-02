@@ -25,6 +25,7 @@
 package test
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"os/exec"
@@ -120,6 +121,10 @@ func (s *Server) Close() error {
 	if s.cmd == nil {
 		return errors.Errorf("not running")
 	}
-	go func() { s.cmd.Process.Kill() }()
+	go func() {
+		if err := s.cmd.Process.Kill(); err != nil {
+			fmt.Printf("unable to kill process: %s", err.Error())
+		}
+	}()
 	return <-s.waitch
 }

@@ -50,7 +50,7 @@ func (d *Driver) startSubscriptionListener() error {
 		return err
 	}
 
-	client, err := d.getClient(device)
+	client, err := d.getClient(ctx, device)
 	if err != nil {
 		return err
 	}
@@ -61,20 +61,20 @@ func (d *Driver) startSubscriptionListener() error {
 	}
 	defer client.Close()
 
+	notifyCh := make(chan *opcua.PublishNotificationData)
+
 	sub, err := client.Subscribe(
 		&opcua.SubscriptionParameters{
 			Interval: time.Duration(500) * time.Millisecond,
-		}, make(chan *opcua.PublishNotificationData))
+		}, notifyCh)
 	if err != nil {
 		return err
 	}
-	defer sub.Cancel()
+	defer sub.Cancel(ctx) //nolint:errcheck
 
 	if err := d.configureMonitoredItems(sub, resources, deviceName); err != nil {
 		return err
 	}
-
-	go sub.Run(ctx) // start Publish loop
 
 	// read from subscription's notification channel until ctx is cancelled
 	for {
@@ -82,8 +82,8 @@ func (d *Driver) startSubscriptionListener() error {
 		// context return
 		case <-ctx.Done():
 			return nil
-			// receive Publish Notification Data
-		case res := <-sub.Notifs:
+		// receive Publish Notification Data
+		case res := <-notifyCh:
 			if res.Error != nil {
 				d.Logger.Debug(res.Error.Error())
 				continue
@@ -97,7 +97,7 @@ func (d *Driver) startSubscriptionListener() error {
 	}
 }
 
-func (d *Driver) getClient(device models.Device) (*opcua.Client, error) {
+func (d *Driver) getClient(ctx context.Context, device models.Device) (*opcua.Client, error) {
 	var (
 		policy   = d.serviceConfig.OPCUAServer.Policy
 		mode     = d.serviceConfig.OPCUAServer.Mode
@@ -110,7 +110,7 @@ func (d *Driver) getClient(device models.Device) (*opcua.Client, error) {
 		return nil, xerr
 	}
 
-	endpoints, err := opcua.GetEndpoints(endpoint)
+	endpoints, err := opcua.GetEndpoints(ctx, endpoint)
 	if err != nil {
 		return nil, err
 	}

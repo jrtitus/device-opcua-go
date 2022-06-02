@@ -7,6 +7,7 @@
 package driver
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -16,9 +17,11 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
+	"github.com/gopcua/opcua"
+	"github.com/gopcua/opcua/ua"
 )
 
-func TestDriver_HandleReadCommands(t *testing.T) {
+func TestDriver_processReadCommands(t *testing.T) {
 	type args struct {
 		deviceName string
 		protocols  map[string]models.ProtocolProperties
@@ -36,18 +39,6 @@ func TestDriver_HandleReadCommands(t *testing.T) {
 				deviceName: "Test",
 				protocols:  map[string]models.ProtocolProperties{config.Protocol: {}},
 				reqs:       []sdkModel.CommandRequest{{DeviceResourceName: "TestVar1"}},
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "NOK - invalid endpoint defined",
-			args: args{
-				deviceName: "Test",
-				protocols: map[string]models.ProtocolProperties{
-					config.Protocol: {config.Endpoint: test.Protocol + "unknown"},
-				},
-				reqs: []sdkModel.CommandRequest{{DeviceResourceName: "TestVar1"}},
 			},
 			want:    nil,
 			wantErr: true,
@@ -168,7 +159,19 @@ func TestDriver_HandleReadCommands(t *testing.T) {
 			d := &Driver{
 				Logger: &logger.MockLogger{},
 			}
-			got, err := d.HandleReadCommands(tt.args.deviceName, tt.args.protocols, tt.args.reqs)
+			// create device client and open connection
+			endpoint, errx := config.FetchEndpoint(tt.args.protocols)
+			if errx != nil {
+				return
+			}
+			client := opcua.NewClient(endpoint, opcua.SecurityMode(ua.MessageSecurityModeNone))
+			defer client.Close()
+			if err := client.Connect(context.Background()); err != nil {
+				t.Errorf("Unable to connect to server: %v", err)
+				return
+			}
+
+			got, err := d.processReadCommands(client, tt.args.reqs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Driver.HandleReadCommands() error = %v, wantErr %v", err, tt.wantErr)
 				return

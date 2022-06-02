@@ -95,8 +95,7 @@ The `attributes` field may also contain an `inputMap: []` that passes parameters
 
 ```bash
 make build
-cd cmd
-EDGEX_SECURITY_SECRET_STORE=false ./device-opcua
+EDGEX_SECURITY_SECRET_STORE=false make run
 ```
 
 ## Build a Container Image

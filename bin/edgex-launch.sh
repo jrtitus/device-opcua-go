@@ -18,13 +18,13 @@ CMD=../cmd
 
 function cleanup {
 	pkill edgex-device-opcua
+	exit 0
 }
+
+trap cleanup TERM QUIT INT
 
 cd $CMD
 exec -a edgex-device-opcua ./device-opcua &
 cd $DIR
-
-
-trap cleanup TERM QUIT INT
 
 while : ; do sleep 1 ; done
