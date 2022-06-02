@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/edgexfoundry/device-sdk-go/v2 v2.2.0
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.2.0
+	github.com/go-playground/validator/v10 v10.11.0
 	github.com/gopcua/opcua v0.3.4
 	github.com/spf13/cast v1.5.0
 	github.com/stretchr/testify v1.7.1
@@ -29,7 +30,6 @@ require (
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
-	github.com/go-playground/validator/v10 v10.11.0 // indirect
 	github.com/go-redis/redis/v7 v7.4.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect

@@ -79,13 +79,3 @@ LogLevel = "INFO"
       [Writable.InsecureSecrets.Sample.Secrets]
       username = ""
       password = ""
-
-# Driver configs
-[OPCUAServer]
-DeviceName = "SimulationServer"   # Name of existing Device
-Policy = "None"                   # Security policy: None, Basic128Rsa15, Basic256, Basic256Sha256. Default: None
-Mode = "None"                     # Security mode: None, Sign, SignAndEncrypt. Default: None
-CertFile = ""                     # Path to cert.pem. Required for security mode/policy != None
-KeyFile = ""                      # Path to private key.pem. Required for security mode/policy != None
-  [OPCUAServer.Writable]
-  Resources = "Counter,Random"    # Device resources related to Node IDs to subscribe to (comma-separated values)

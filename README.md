@@ -6,7 +6,7 @@ This repository is a Go-based EdgeX Foundry Device Service which uses OPC-UA pro
 
 ## Features
 
-1. Subscribe/Unsubscribe one or more variables (writable configuration)
+1. Subscribe/Unsubscribe one or more variables
 2. Execute read command
 3. Execute write command
 4. Execute method (using Read command of device SDK)
@@ -26,8 +26,6 @@ Download the Prosys OPC UA Simulation Server from [here](https://www.prosysopc.c
 
 Define devices for device-sdk to auto upload device profile and create device instance. Please modify `devices.toml` file found under the `./cmd/res/devices` folder.
 
-> This device service is currently limited to a single device instance.
-
 ```toml
 # Pre-define Devices
 [[DeviceList]]
@@ -38,22 +36,11 @@ Define devices for device-sdk to auto upload device profile and create device in
   [DeviceList.Protocols]
       [DeviceList.Protocols.opcua]
           Endpoint = "opc.tcp://127.0.0.1:53530/OPCUA/SimulationServer"
-```
-
-### Configuration
-
-Modify `configuration.toml` file found under the `./cmd/res` folder if needed
-
-```toml
-# Driver configs
-[OPCUAServer]
-DeviceName = "SimulationServer"   # Name of existing Device
-Policy = "None"                   # Security policy: None, Basic128Rsa15, Basic256, Basic256Sha256. Default: None
-Mode = "None"                     # Security mode: None, Sign, SignAndEncrypt. Default: None
-CertFile = ""                     # Path to cert.pem. Required for security mode/policy != None
-KeyFile = ""                      # Path to private key.pem. Required for security mode/policy != None
-  [OPCUAServer.Writable]
-  Resources = "Counter,Random"    # Device resources related to Node IDs to subscribe to (comma-separated values)
+          Policy = "None"                # Security policy: None, Basic128Rsa15, Basic256, Basic256Sha256. Default: None
+          Mode = "None"                  # Security mode: None, Sign, SignAndEncrypt. Default: None
+          CertFile = ""                  # Path to cert.pem. Required for security mode/policy != None
+          KeyFile = ""                   # Path to private key.pem. Required for security mode/policy != None
+          Resources = "Counter,Random"   # Device resources related to Node IDs to subscribe to (comma-separated values)
 ```
 
 ## Device Profile

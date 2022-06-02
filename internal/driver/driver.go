@@ -9,15 +9,13 @@
 package driver
 
 import (
-	"context"
 	"fmt"
 	"sync"
 
-	"github.com/edgexfoundry/device-opcua-go/internal/config"
+	"github.com/edgexfoundry/device-opcua-go/internal/server"
 	sdkModel "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
 	"github.com/edgexfoundry/device-sdk-go/v2/pkg/service"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/errors"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
 )
 
@@ -26,12 +24,10 @@ var driver *Driver
 
 // Driver struct
 type Driver struct {
-	Logger        logger.LoggingClient
-	AsyncCh       chan<- *sdkModel.AsyncValues
-	serviceConfig *config.ServiceConfig
-	resourceMap   map[uint32]string
-	mu            sync.Mutex
-	ctxCancel     context.CancelFunc
+	Logger    logger.LoggingClient
+	AsyncCh   chan<- *sdkModel.AsyncValues
+	mu        sync.Mutex
+	serverMap map[string]*server.Server
 }
 
 // NewProtocolDriver returns a new protocol driver object
@@ -46,88 +42,61 @@ func NewProtocolDriver() sdkModel.ProtocolDriver {
 func (d *Driver) Initialize(lc logger.LoggingClient, asyncCh chan<- *sdkModel.AsyncValues, deviceCh chan<- []sdkModel.DiscoveredDevice) error {
 	d.Logger = lc
 	d.AsyncCh = asyncCh
-	d.serviceConfig = &config.ServiceConfig{}
 	d.mu.Lock()
-	d.resourceMap = make(map[uint32]string)
+	d.serverMap = make(map[string]*server.Server)
 	d.mu.Unlock()
 
 	ds := service.RunningService()
 	if ds == nil {
-		return errors.NewCommonEdgeXWrapper(fmt.Errorf("unable to get running device service"))
+		return fmt.Errorf("unable to get device service instance")
 	}
 
-	if err := ds.LoadCustomConfig(d.serviceConfig, CustomConfigSectionName); err != nil {
-		return errors.NewCommonEdgeX(errors.Kind(err), fmt.Sprintf("unable to load '%s' custom configuration", CustomConfigSectionName), err)
-	}
-
-	lc.Debugf("Custom config is: %v", d.serviceConfig)
-
-	if err := d.serviceConfig.OPCUAServer.Validate(); err != nil {
-		return errors.NewCommonEdgeXWrapper(err)
-	}
-
-	if err := ds.ListenForCustomConfigChanges(&d.serviceConfig.OPCUAServer.Writable, WritableInfoSectionName, d.updateWritableConfig); err != nil {
-		return errors.NewCommonEdgeX(errors.Kind(err), fmt.Sprintf("unable to listen for changes for '%s' custom configuration", WritableInfoSectionName), err)
+	// When the service is initialized, add pre-existing devices to the server map
+	for _, v := range ds.Devices() {
+		if err := d.AddDevice(v.Name, v.Protocols, v.AdminState); err != nil {
+			d.Logger.Errorf("[%s] error adding device to server map: %v", v.Name, err)
+		}
 	}
 
 	return nil
 }
 
-// Callback function provided to ListenForCustomConfigChanges to update
-// the configuration when OPCUAServer.Writable changes
-func (d *Driver) updateWritableConfig(rawWritableConfig interface{}) {
-	updated, ok := rawWritableConfig.(*config.WritableInfo)
-	if !ok {
-		d.Logger.Error("unable to update writable config: Cannot cast raw config to type 'WritableInfo'")
-		return
-	}
-
-	d.cleanup()
-
-	d.serviceConfig.OPCUAServer.Writable = *updated
-
-	go d.startSubscriber()
-}
-
-// Start or restart the subscription listener
-func (d *Driver) startSubscriber() {
-	err := d.startSubscriptionListener()
-	if err != nil {
-		d.Logger.Errorf("Driver.Initialize: Start incoming data Listener failed: %v", err)
-	}
-}
-
-// Close the existing context.
-// This, in turn, cancels the existing subscription if it exists
-func (d *Driver) cleanup() {
-	if d.ctxCancel != nil {
-		d.ctxCancel()
-		d.ctxCancel = nil
-	}
-}
-
 // AddDevice is a callback function that is invoked
 // when a new Device associated with this Device Service is added
 func (d *Driver) AddDevice(deviceName string, protocols map[string]models.ProtocolProperties, adminState models.AdminState) error {
-	// Start subscription listener when device is added.
-	// This does not happen automatically like it does when the device is updated
-	go d.startSubscriber()
-	d.Logger.Debugf("Device %s is added", deviceName)
+	d.Logger.Debugf("Device %s is added. Starting subscription mechanism...", deviceName)
+	d.mu.Lock()
+	s := server.NewServer(deviceName, d.Logger, d.AsyncCh)
+	d.serverMap[deviceName] = s
+	d.mu.Unlock()
+
+	go s.StartSubscriptionListener() // nolint:errcheck
 	return nil
 }
 
 // UpdateDevice is a callback function that is invoked
 // when a Device associated with this Device Service is updated
 func (d *Driver) UpdateDevice(deviceName string, protocols map[string]models.ProtocolProperties, adminState models.AdminState) error {
-	d.Logger.Debugf("Device %s is updated", deviceName)
-	return nil
+	d.Logger.Debugf("Device %s is updated. Restarting subscription mechanism...", deviceName)
+	if s, ok := d.serverMap[deviceName]; ok {
+		s.Cleanup(true)
+		go s.StartSubscriptionListener() // nolint:errcheck
+		return nil
+	}
+
+	return serverNotFoundError(deviceName)
 }
 
 // RemoveDevice is a callback function that is invoked
 // when a Device associated with this Device Service is removed
 func (d *Driver) RemoveDevice(deviceName string, protocols map[string]models.ProtocolProperties) error {
-	d.Logger.Debugf("Device %s is removed", deviceName)
-	return nil
+	d.Logger.Debugf("Device %s is removed. Cleaning up...", deviceName)
+	if s, ok := d.serverMap[deviceName]; ok {
+		s.Cleanup(false)
+		d.serverMap[deviceName] = nil
+		return nil
+	}
+	return serverNotFoundError(deviceName)
 }
 
 // Stop the protocol-specific DS code to shutdown gracefully, or
@@ -136,17 +105,43 @@ func (d *Driver) RemoveDevice(deviceName string, protocols map[string]models.Pro
 // readings (if supported).
 func (d *Driver) Stop(force bool) error {
 	d.mu.Lock()
-	d.resourceMap = nil
+	d.serverMap = nil
+	d.AsyncCh = nil
 	d.mu.Unlock()
-	d.cleanup()
 	return nil
 }
 
-func getNodeID(attrs map[string]interface{}, id string) (string, error) {
-	identifier, ok := attrs[id]
+// HandleReadCommands triggers a protocol Read operation for the specified device.
+func (d *Driver) HandleReadCommands(deviceName string, protocols map[string]models.ProtocolProperties,
+	reqs []sdkModel.CommandRequest) ([]*sdkModel.CommandValue, error) {
+
+	d.Logger.Debugf("Driver.HandleReadCommands: protocols: %v resource: %v attributes: %v", protocols, reqs[0].DeviceResourceName, reqs[0].Attributes)
+
+	s, ok := d.serverMap[deviceName]
 	if !ok {
-		return "", fmt.Errorf("attribute %s does not exist", id)
+		return nil, serverNotFoundError(deviceName)
 	}
 
-	return identifier.(string), nil
+	return s.ProcessReadCommands(reqs)
+}
+
+// HandleWriteCommands passes a slice of CommandRequest struct each representing
+// a ResourceOperation for a specific device resource (aka DeviceObject).
+// Since the commands are actuation commands, params provide parameters for the individual
+// command.
+func (d *Driver) HandleWriteCommands(deviceName string, protocols map[string]models.ProtocolProperties,
+	reqs []sdkModel.CommandRequest, params []*sdkModel.CommandValue) error {
+
+	d.Logger.Debugf("Driver.HandleWriteCommands: protocols: %v, resource: %v, parameters: %v", protocols, reqs[0].DeviceResourceName, params)
+
+	s, ok := d.serverMap[deviceName]
+	if !ok {
+		return serverNotFoundError(deviceName)
+	}
+
+	return s.ProcessWriteCommands(reqs, params)
+}
+
+func serverNotFoundError(deviceName string) error {
+	return fmt.Errorf("unable to find device %s in server map", deviceName)
 }
