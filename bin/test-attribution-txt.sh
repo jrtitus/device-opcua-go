@@ -39,14 +39,13 @@ GO111MODULE=on go mod vendor
 # anything in this loop
 shopt -s nullglob
 
-
 if [ ! -f Attribution.txt ]; then
     echo "An Attribution.txt file is missing, please add"
     EXIT_CODE=1
 else
     # loop over every library in the modules.txt file in vendor
     while IFS= read -r lib; do
-        if ! grep -q "$lib" Attribution.txt && [ "$lib" != "explicit" ]; then
+        if ! grep -q "$lib" Attribution.txt && [ "$lib" != "explicit" ] && [ "$lib" != "explicit;" ]; then
             echo "An attribution for $lib is missing from in Attribution.txt, please add"
             # need to do this in a bash subshell, see SC2031
             (( EXIT_CODE=1 ))

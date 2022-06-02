@@ -97,6 +97,12 @@ https://github.com/hashicorp/golang-lru/blob/master/LICENSE
 github.com/hashicorp/serf (MPL 2.0) https://github.com/hashicorp/serf
 https://github.com/hashicorp/serf/blob/master/LICENSE
 
+hashicorp/errwrap (Mozilla Public License 2.0) https://github.com/hashicorp/errwrap
+https://github.com/hashicorp/errwrap/blob/master/LICENSE
+
+hashicorp/go-multierror (Mozilla Public License 2.0) https://github.com/hashicorp/go-multierror
+https://github.com/hashicorp/go-multierror/blob/master/LICENSE
+
 github.com/kr/logfmt (MIT) https://github.com/kr/logfmt
 https://github.com/kr/logfmt/blob/main/LICENSE
 
@@ -163,3 +169,35 @@ https://github.com/go-yaml/yaml/blob/v2/master/LICENSE
 gopkg.in/yaml.v3 (Unspecified) https://github.com/gopkg.in/yaml.v3
 https://github.com/gopkg.in/yaml.v3/blob/master/LICENSE
 
+go-kit/log (MIT) https://github.com/go-kit/log
+https://github.com/go-kit/log/blob/main/LICENSE
+
+github.com/golang/protobuf (BSD-3) https://github.com/golang/protobuf
+https://github.com/golang/protobuf/blob/master/LICENSE
+
+github.com/spiffe/go-spiffe/v2 (Apache-2.0 License) github.com/spiffe/go-spiffe/v2
+https://github.com/spiffe/go-spiffe/blob/main/LICENSE
+
+github.com/zeebo/errs (MIT) https://github.com/zeebo/errs
+https://github.com/zeebo/errs/blob/master/LICENSE
+
+google.golang.org/genproto (Apache-2.0) https://github.com/googleapis/go-genproto
+https://github.com/googleapis/go-genproto/blob/main/LICENSE
+
+google.golang.org/grpc (Apache-2.0) https://github.com/grpc/grpc-go
+https://github.com/grpc/grpc-go/blob/master/LICENSE
+
+google.golang.org/protobuf (Unspecified) https://github.com/protocolbuffers/protobuf-go
+https://github.com/protocolbuffers/protobuf-go/blob/master/LICENSE
+
+gopkg.in/square/go-jose.v2 (Apache-2.0) https://github.com/square/go-jose/tree/v2.6.0
+https://github.com/square/go-jose/blob/v2.6.0/LICENSE
+
+pkg/errors (BSD-2) https://github.com/pkg/errors
+https://github.com/pkg/errors/blob/master/LICENSE
+
+rcrowley/go-metrics (Unspecified) https://github.com/rcrowley/go-metrics
+https://github.com/rcrowley/go-metrics/blob/master/LICENSE
+
+github.com/Microsoft/go-winio (MIT) https://github.com/Microsoft/go-winio
+https://github.com/microsoft/go-winio/blob/master/LICENSE

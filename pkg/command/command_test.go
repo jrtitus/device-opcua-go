@@ -1,123 +1,20 @@
 // -*- Mode: Go; indent-tabs-mode: t -*-
 //
+// Copyright (C) 2018 Canonical Ltd
+// Copyright (C) 2018 IOTech Ltd
 // Copyright (C) 2021 Schneider Electric
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package driver
+package command
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/edgexfoundry/device-opcua-go/internal/config"
-	"github.com/edgexfoundry/device-opcua-go/internal/test"
 	sdkModel "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
 )
-
-func TestDriver_HandleWriteCommands(t *testing.T) {
-	type args struct {
-		deviceName string
-		protocols  map[string]models.ProtocolProperties
-		reqs       []sdkModel.CommandRequest
-		params     []*sdkModel.CommandValue
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "NOK - no endpoint defined",
-			args: args{
-				deviceName: "Test",
-				protocols:  map[string]models.ProtocolProperties{config.Protocol: {}},
-				reqs:       []sdkModel.CommandRequest{{DeviceResourceName: "TestVar1"}},
-			},
-			wantErr: true,
-		},
-		{
-			name: "NOK - invalid endpoint defined",
-			args: args{
-				deviceName: "Test",
-				protocols:  map[string]models.ProtocolProperties{config.Protocol: {config.Endpoint: test.Protocol + "unknown"}},
-				reqs:       []sdkModel.CommandRequest{{DeviceResourceName: "TestVar1"}},
-			},
-			wantErr: true,
-		},
-		{
-			name: "NOK - invalid node id",
-			args: args{
-				deviceName: "Test",
-				protocols:  map[string]models.ProtocolProperties{config.Protocol: {config.Endpoint: test.Protocol + test.Address}},
-				reqs: []sdkModel.CommandRequest{{
-					DeviceResourceName: "TestResource1",
-					Attributes:         map[string]interface{}{NODE: "2"},
-					Type:               common.ValueTypeInt32,
-				}},
-				params: []*sdkModel.CommandValue{{
-					DeviceResourceName: "TestResource1",
-					Type:               common.ValueTypeInt32,
-					Value:              int32(42),
-				}},
-			},
-			wantErr: true,
-		},
-		{
-			name: "NOK - invalid value",
-			args: args{
-				deviceName: "Test",
-				protocols:  map[string]models.ProtocolProperties{config.Protocol: {config.Endpoint: test.Protocol + test.Address}},
-				reqs: []sdkModel.CommandRequest{{
-					DeviceResourceName: "TestResource1",
-					Attributes:         map[string]interface{}{NODE: "ns=2;s=rw_int32"},
-					Type:               common.ValueTypeInt32,
-				}},
-				params: []*sdkModel.CommandValue{{
-					DeviceResourceName: "TestResource1",
-					Type:               common.ValueTypeString,
-					Value:              "foobar",
-				}},
-			},
-			wantErr: true,
-		},
-		{
-			name: "OK - command request with one parameter",
-			args: args{
-				deviceName: "Test",
-				protocols:  map[string]models.ProtocolProperties{config.Protocol: {config.Endpoint: test.Protocol + test.Address}},
-				reqs: []sdkModel.CommandRequest{{
-					DeviceResourceName: "TestResource1",
-					Attributes:         map[string]interface{}{NODE: "ns=2;s=rw_int32"},
-					Type:               common.ValueTypeInt32,
-				}},
-				params: []*sdkModel.CommandValue{{
-					DeviceResourceName: "TestResource1",
-					Type:               common.ValueTypeInt32,
-					Value:              int32(42),
-				}},
-			},
-			wantErr: false,
-		},
-	}
-
-	server := test.NewServer("../test/opcua_server.py")
-	defer server.Close()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			d := &Driver{
-				Logger: &logger.MockLogger{},
-			}
-			if err := d.HandleWriteCommands(tt.args.deviceName, tt.args.protocols, tt.args.reqs, tt.args.params); (err != nil) != tt.wantErr {
-				t.Errorf("Driver.HandleWriteCommands() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
 
 func Test_newCommandValue(t *testing.T) {
 	type args struct {
@@ -217,7 +114,7 @@ func Test_newCommandValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := newCommandValue(tt.args.valueType, tt.args.param)
+			got, err := NewValue(tt.args.valueType, tt.args.param)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("newCommandValue() error = %v, wantErr %v", err, tt.wantErr)
 				return
