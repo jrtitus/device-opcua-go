@@ -30,15 +30,10 @@ func (s *Server) ProcessWriteCommands(reqs []sdkModel.CommandRequest, params []*
 
 func (s *Server) handleWriteCommandRequest(req sdkModel.CommandRequest,
 	param *sdkModel.CommandValue) error {
-	nodeID, err := getNodeID(req.Attributes, NODE)
-	if err != nil {
-		return fmt.Errorf("Driver.handleWriteCommands: %v", err)
-	}
 
-	// get NewNodeID
-	id, err := ua.ParseNodeID(nodeID)
+	id, err := getNodeID(req.Attributes, NODE)
 	if err != nil {
-		return fmt.Errorf("Driver.handleWriteCommands: Invalid node id=%s", nodeID)
+		return fmt.Errorf("Driver.handleWriteCommands: invalid node id: %v", err)
 	}
 
 	value, err := command.NewValue(req.Type, param)

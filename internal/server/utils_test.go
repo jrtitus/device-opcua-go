@@ -39,7 +39,7 @@ func Test_getNodeID(t *testing.T) {
 				t.Errorf("buildNodeID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
+			if got != nil && got.String() != tt.want {
 				t.Errorf("buildNodeID() = %v, want %v", got, tt.want)
 			}
 		})
