@@ -10,6 +10,7 @@ package driver
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/server"
@@ -56,6 +57,11 @@ func (d *Driver) Initialize(lc logger.LoggingClient, asyncCh chan<- *sdkModel.As
 		if err := d.AddDevice(v.Name, v.Protocols, v.AdminState); err != nil {
 			d.Logger.Errorf("[%s] error adding device to server map: %v", v.Name, err)
 		}
+	}
+
+	// Define custom API endpoints
+	if err := ds.AddRoute("/api/v2/call", handleMethodCall, http.MethodPost); err != nil {
+		d.Logger.Errorf("unable to add custom route to device service: %v", err)
 	}
 
 	return nil

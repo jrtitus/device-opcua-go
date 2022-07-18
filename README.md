@@ -9,7 +9,7 @@ This repository is a Go-based EdgeX Foundry Device Service which uses OPC-UA pro
 1. Subscribe/Unsubscribe one or more variables
 2. Execute read command
 3. Execute write command
-4. Execute method (using Read command of device SDK)
+4. Execute method
 
 ## Prerequisites
 
@@ -58,25 +58,27 @@ deviceResources:
   -
     name: "SetDefaultsMethod"
     description: "Set all variables to their default values"
+    isHidden: "false" # Specifies if the method can be called
     properties:
-      # Specifies the response value type
-      valueType: "String"
+      valueType: "String" # Response type will always be String
       readWrite: "R"
     attributes:
       { methodId: "ns=5;s=Defaults", objectId: "ns=5;i=1111" }
-
-deviceCommands:
-  -
-    name: "SetDefaults"
-    isHidden: false
-    readWrite: "R"
-    resourceOperations:
-      - { deviceResource: "SetDefaultsMethod" }
 ```
 
-Notice that method calls require specifying the NodeId of both the method and its parent object.
+Notice that method calls require specifying the Node ID of both the method and its parent object.
 
-The `attributes` field may also contain an `inputMap: []` that passes parameters to the method, if applicable.
+A REST endpoint is available at `POST /api/v2/call` to handle method calls. The request body is defined as follows:
+
+```json
+{
+  "device": "Device_Name",
+  "method": "Device_Resource_Name",
+  "parameters": [""]
+}
+```
+
+Both `device` and `method` properties are required, and `parameters` is optional.
 
 ## Build and Run
 

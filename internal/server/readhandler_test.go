@@ -74,7 +74,7 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 				},
 				reqs: []sdkModel.CommandRequest{{
 					DeviceResourceName: "TestResource1",
-					Attributes:         map[string]interface{}{NODE: "2"},
+					Attributes:         map[string]interface{}{NODE: "ns=2;i=22;z=43"},
 					Type:               common.ValueTypeInt32,
 				}},
 			},
@@ -82,32 +82,16 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "NOK - method call - invalid node id",
+			name: "NOK - not allowed to call method with reader",
 			args: args{
 				deviceName: "Test",
 				protocols: map[string]models.ProtocolProperties{
 					Protocol: {Endpoint: test.Protocol + test.Address},
 				},
 				reqs: []sdkModel.CommandRequest{{
-					DeviceResourceName: "TestResource1",
-					Attributes:         map[string]interface{}{METHOD: "ns=2;s=test"},
-					Type:               common.ValueTypeInt32,
-				}},
-			},
-			want:    make([]*sdkModel.CommandValue, 1),
-			wantErr: true,
-		},
-		{
-			name: "NOK - method call - method does not exist",
-			args: args{
-				deviceName: "Test",
-				protocols: map[string]models.ProtocolProperties{
-					Protocol: {Endpoint: test.Protocol + test.Address},
-				},
-				reqs: []sdkModel.CommandRequest{{
-					DeviceResourceName: "TestResource1",
-					Attributes:         map[string]interface{}{METHOD: "ns=2;s=test", OBJECT: "ns=2;s=main"},
-					Type:               common.ValueTypeInt32,
+					DeviceResourceName: "SquareResource",
+					Attributes:         map[string]interface{}{METHOD: "ns=2;s=square", OBJECT: "ns=2;s=main"},
+					Type:               common.ValueTypeInt64,
 				}},
 			},
 			want:    make([]*sdkModel.CommandValue, 1),
@@ -130,27 +114,6 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 				DeviceResourceName: "TestVar1",
 				Type:               common.ValueTypeInt32,
 				Value:              int32(5),
-				Tags:               make(map[string]string),
-			}},
-			wantErr: false,
-		},
-		{
-			name: "OK - call method from mock server",
-			args: args{
-				deviceName: "Test",
-				protocols: map[string]models.ProtocolProperties{
-					Protocol: {Endpoint: test.Protocol + test.Address},
-				},
-				reqs: []sdkModel.CommandRequest{{
-					DeviceResourceName: "SquareResource",
-					Attributes:         map[string]interface{}{METHOD: "ns=2;s=square", OBJECT: "ns=2;s=main", INPUTMAP: []interface{}{"2"}},
-					Type:               common.ValueTypeInt64,
-				}},
-			},
-			want: []*sdkModel.CommandValue{{
-				DeviceResourceName: "SquareResource",
-				Type:               common.ValueTypeInt64,
-				Value:              int64(4),
 				Tags:               make(map[string]string),
 			}},
 			wantErr: false,

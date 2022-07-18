@@ -20,12 +20,12 @@ func (s *Server) ProcessReadCommands(reqs []sdkModel.CommandRequest) ([]*sdkMode
 	var responses = make([]*sdkModel.CommandValue, len(reqs))
 
 	for i, req := range reqs {
-		// handle every reqs
 		res, err := s.handleReadCommandRequest(req)
 		if err != nil {
 			s.logger.Errorf("Driver.HandleReadCommands: Handle read commands failed: %v", err)
 			return responses, err
 		}
+		s.logger.Infof("Read command finished: %v", res)
 		responses[i] = res
 	}
 
@@ -33,31 +33,17 @@ func (s *Server) ProcessReadCommands(reqs []sdkModel.CommandRequest) ([]*sdkMode
 }
 
 func (s *Server) handleReadCommandRequest(req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
-	var result *sdkModel.CommandValue
-	var err error
-
-	_, isMethod := req.Attributes[METHOD]
-
-	if isMethod {
-		result, err = s.makeMethodCall(req)
-		s.logger.Infof("Method command finished: %v", result)
-	} else {
-		result, err = s.makeReadRequest(req)
-		s.logger.Infof("Read command finished: %v", result)
+	if _, isMethod := req.Attributes[METHOD]; isMethod {
+		return nil, fmt.Errorf("not allowed to call command on method: %s", req.DeviceResourceName)
 	}
 
-	return result, err
+	return s.makeReadRequest(req)
 }
 
 func (s *Server) makeReadRequest(req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
-	nodeID, err := getNodeID(req.Attributes, NODE)
+	id, err := getNodeID(req.Attributes, NODE)
 	if err != nil {
-		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
-	}
-
-	id, err := ua.ParseNodeID(nodeID)
-	if err != nil {
-		return nil, fmt.Errorf("Driver.handleReadCommands: Invalid node id=%s; %v", nodeID, err)
+		return nil, fmt.Errorf("Driver.handleReadCommands: Invalid node id = %v", err)
 	}
 
 	request := &ua.ReadRequest{
@@ -75,56 +61,6 @@ func (s *Server) makeReadRequest(req sdkModel.CommandRequest) (*sdkModel.Command
 		return nil, fmt.Errorf("Driver.handleReadCommands: Status not OK: %v", resp.Results[0].Status)
 	}
 
-	// make new result
 	reading := resp.Results[0].Value.Value()
 	return result.NewResult(req, reading)
-}
-
-func (s *Server) makeMethodCall(req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
-	var inputs []*ua.Variant
-
-	objectID, err := getNodeID(req.Attributes, OBJECT)
-	if err != nil {
-		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
-	}
-	oid, err := ua.ParseNodeID(objectID)
-	if err != nil {
-		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
-	}
-
-	methodID, err := getNodeID(req.Attributes, METHOD)
-	if err != nil {
-		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
-	}
-	mid, err := ua.ParseNodeID(methodID)
-	if err != nil {
-		return nil, fmt.Errorf("Driver.handleReadCommands: %v", err)
-	}
-
-	inputMap, ok := req.Attributes[INPUTMAP]
-	if ok {
-		imElements := inputMap.([]interface{})
-		if len(imElements) > 0 {
-			inputs = make([]*ua.Variant, len(imElements))
-			for i := 0; i < len(imElements); i++ {
-				inputs[i] = ua.MustVariant(imElements[i].(string))
-			}
-		}
-	}
-
-	request := &ua.CallMethodRequest{
-		ObjectID:       oid,
-		MethodID:       mid,
-		InputArguments: inputs,
-	}
-
-	resp, err := s.client.Call(request)
-	if err != nil {
-		return nil, fmt.Errorf("Driver.handleReadCommands: Method call failed: %s", err)
-	}
-	if resp.StatusCode != ua.StatusOK {
-		return nil, fmt.Errorf("Driver.handleReadCommands: Method status not OK: %v", resp.StatusCode)
-	}
-
-	return result.NewResult(req, resp.OutputArguments[0].Value())
 }

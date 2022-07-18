@@ -131,12 +131,7 @@ func (s *Server) configureMonitoredItems(sub *opcua.Subscription, resources stri
 			continue
 		}
 
-		opcuaNodeID, err := getNodeID(deviceResource.Attributes, NODE)
-		if err != nil {
-			return err
-		}
-
-		id, err := ua.ParseNodeID(opcuaNodeID)
+		id, err := getNodeID(deviceResource.Attributes, NODE)
 		if err != nil {
 			return err
 		}

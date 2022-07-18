@@ -6,7 +6,11 @@
 
 package server
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/gopcua/opcua/ua"
+)
 
 const (
 	NODE     string = "nodeId"
@@ -15,11 +19,11 @@ const (
 	INPUTMAP string = "inputMap"
 )
 
-func getNodeID(attrs map[string]interface{}, id string) (string, error) {
+func getNodeID(attrs map[string]interface{}, id string) (*ua.NodeID, error) {
 	identifier, ok := attrs[id]
 	if !ok {
-		return "", fmt.Errorf("attribute %s does not exist", id)
+		return nil, fmt.Errorf("attribute %s does not exist", id)
 	}
 
-	return identifier.(string), nil
+	return ua.ParseNodeID(identifier.(string))
 }
