@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-FROM golang:1.17-alpine3.15 AS builder
+FROM golang:1.18-alpine3.16 AS builder
 WORKDIR /device-opcua-go
 
 # Install our build time packages.
@@ -19,7 +19,7 @@ COPY . .
 RUN make build
 
 # Next image - Copy built Go binary into new workspace
-FROM alpine:3.14
+FROM alpine:3.16
 
 # dumb-init needed for injected secure bootstrapping entrypoint script when run in secure mode.
 RUN apk add --update --no-cache zeromq dumb-init
