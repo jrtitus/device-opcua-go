@@ -61,8 +61,8 @@ docker_device_opcua_go:
 	docker build \
 		--label "git_sha=$(GIT_SHA)" \
 		--build-arg ADD_BUILD_TAGS=$(ADD_BUILD_TAGS) \
-		-t edgexfoundry/device-opcua-goa:$(GIT_SHA) \
-		-t edgexfoundry/device-opcua-goa:$(VERSION)-dev \
+		-t edgexfoundry/device-opcua-go:$(GIT_SHA) \
+		-t edgexfoundry/device-opcua-go:$(VERSION)-dev \
 		.
 
 docker-nats:
