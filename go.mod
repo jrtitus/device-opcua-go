@@ -3,7 +3,7 @@ module github.com/edgexfoundry/device-opcua-go
 go 1.18
 
 require (
-	github.com/edgexfoundry/device-sdk-go/v2 v2.3.0
+	github.com/edgexfoundry/device-sdk-go/v2 v2.3.1
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.3.0
 	github.com/go-playground/validator/v10 v10.13.0
 	github.com/gopcua/opcua v0.3.13
