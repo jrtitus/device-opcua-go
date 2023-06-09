@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/edgexfoundry/device-sdk-go/v2 v2.3.1
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.3.0
-	github.com/go-playground/validator/v10 v10.14.0
+	github.com/go-playground/validator/v10 v10.14.1
 	github.com/gopcua/opcua v0.3.15
 	github.com/spf13/cast v1.5.1
 	github.com/stretchr/testify v1.8.3
