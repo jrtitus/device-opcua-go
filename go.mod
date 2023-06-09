@@ -8,7 +8,7 @@ require (
 	github.com/go-playground/validator/v10 v10.14.1
 	github.com/gopcua/opcua v0.3.15
 	github.com/spf13/cast v1.5.1
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 )
 
 require (
