@@ -213,3 +213,6 @@ https://github.com/nats-io/nats.go/blob/main/LICENSE
 
 github.com/nats-io/nuid (Apache-2.0) https://github.com/nats-io/nuid
 https://github.com/nats-io/nuid/blob/master/LICENSE
+
+github.com/gabriel-vasile/mimetype (MIT) https://github.com/gabriel-vasile/mimetype
+https://github.com/gabriel-vasile/mimetype/blob/master/LICENSE
