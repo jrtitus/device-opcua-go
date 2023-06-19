@@ -6,7 +6,7 @@ require (
 	github.com/edgexfoundry/device-sdk-go/v2 v2.3.1
 	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.3.0
 	github.com/go-playground/validator/v10 v10.14.1
-	github.com/gopcua/opcua v0.3.15
+	github.com/gopcua/opcua v0.4.0
 	github.com/spf13/cast v1.5.1
 	github.com/stretchr/testify v1.8.3
 )
@@ -65,11 +65,12 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/zeebo/errs v1.3.0 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
-	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/crypto v0.9.0 // indirect
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
+	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
 	google.golang.org/grpc v1.46.2 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
