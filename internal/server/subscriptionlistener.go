@@ -15,8 +15,7 @@ import (
 	"time"
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/result"
-	sdkModels "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
-	"github.com/edgexfoundry/device-sdk-go/v2/pkg/service"
+	sdkModels "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )
@@ -24,12 +23,7 @@ import (
 // StartSubscriptionListener initializes a new OPCUA client and subscribes to the resources
 // specified by the user in the device protocol configuration
 func (s *Server) StartSubscriptionListener() error {
-	ds := service.RunningService()
-	if ds == nil {
-		return fmt.Errorf("[%s] unable to get running device service", s.deviceName)
-	}
-
-	device, err := ds.GetDeviceByName(s.deviceName)
+	device, err := s.sdk.GetDeviceByName(s.deviceName)
 	if err != nil {
 		return err
 	}
@@ -44,7 +38,7 @@ func (s *Server) StartSubscriptionListener() error {
 	}
 
 	if err := s.client.Connect(s.client.ctx); err != nil {
-		s.logger.Warnf("[%s] failed to connect OPCUA client: %v", s.deviceName, err)
+		s.sdk.LoggingClient().Warnf("[%s] failed to connect OPCUA client: %v", s.deviceName, err)
 		return err
 	}
 	defer s.client.Close()
@@ -73,7 +67,7 @@ func (s *Server) StartSubscriptionListener() error {
 		// receive Publish Notification Data
 		case res := <-notifyCh:
 			if res.Error != nil {
-				s.logger.Debug(res.Error.Error())
+				s.sdk.LoggingClient().Debug(res.Error.Error())
 				continue
 			}
 			switch dataChangeNotification := res.Value.(type) {
@@ -116,18 +110,13 @@ func (s *Server) initClient(config *Config) error {
 }
 
 func (s *Server) configureMonitoredItems(sub *opcua.Subscription, resources string) error {
-	ds := service.RunningService()
-	if ds == nil {
-		return fmt.Errorf("[%s] unable to get running device service", s.deviceName)
-	}
-
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for i, resource := range strings.Split(resources, ",") {
-		deviceResource, ok := ds.DeviceResource(s.deviceName, resource)
+		deviceResource, ok := s.sdk.DeviceResource(s.deviceName, resource)
 		if !ok {
-			s.logger.Warnf("[%s] unable to find resource with name %s", s.deviceName, resource)
+			s.sdk.LoggingClient().Warnf("[%s] unable to find resource with name %s", s.deviceName, resource)
 			continue
 		}
 
@@ -146,7 +135,7 @@ func (s *Server) configureMonitoredItems(sub *opcua.Subscription, resources stri
 			return err
 		}
 
-		s.logger.Infof("[%s] start incoming data listening for %s", s.deviceName, resource)
+		s.sdk.LoggingClient().Infof("[%s] start incoming data listening for %s", s.deviceName, resource)
 	}
 
 	return nil
@@ -160,20 +149,15 @@ func (s *Server) handleDataChange(dcn *ua.DataChangeNotification) {
 		data := item.Value.Value.Value()
 		resourceName := s.resourceMap[item.ClientHandle]
 		if err := s.onIncomingDataReceived(data, resourceName); err != nil {
-			s.logger.Errorf("%v", err)
+			s.sdk.LoggingClient().Errorf("%v", err)
 		}
 	}
 }
 
 func (s *Server) onIncomingDataReceived(data interface{}, nodeResourceName string) error {
-	ds := service.RunningService()
-	if ds == nil {
-		return fmt.Errorf("[%s] unable to get running device service", s.deviceName)
-	}
-
-	deviceResource, ok := ds.DeviceResource(s.deviceName, nodeResourceName)
+	deviceResource, ok := s.sdk.DeviceResource(s.deviceName, nodeResourceName)
 	if !ok {
-		s.logger.Warnf("[%s] Incoming reading ignored. No DeviceObject found: deviceResource=%v value=%v", s.deviceName, nodeResourceName, data)
+		s.sdk.LoggingClient().Warnf("[%s] Incoming reading ignored. No DeviceObject found: deviceResource=%v value=%v", s.deviceName, nodeResourceName, data)
 		return nil
 	}
 
@@ -185,7 +169,7 @@ func (s *Server) onIncomingDataReceived(data interface{}, nodeResourceName strin
 	reading := data
 	result, err := result.NewResult(req, reading)
 	if err != nil {
-		s.logger.Warnf("[%s] Incoming reading ignored. deviceResource=%v value=%v", s.deviceName, nodeResourceName, data)
+		s.sdk.LoggingClient().Warnf("[%s] Incoming reading ignored. deviceResource=%v value=%v", s.deviceName, nodeResourceName, data)
 		return nil
 	}
 
@@ -194,9 +178,9 @@ func (s *Server) onIncomingDataReceived(data interface{}, nodeResourceName strin
 		CommandValues: []*sdkModels.CommandValue{result},
 	}
 
-	s.logger.Infof("[%s] Incoming reading received: deviceResource=%v value=%v", s.deviceName, nodeResourceName, data)
+	s.sdk.LoggingClient().Infof("[%s] Incoming reading received: deviceResource=%v value=%v", s.deviceName, nodeResourceName, data)
 
-	s.asyncChannel <- asyncValues
+	s.sdk.AsyncValuesChannel() <- asyncValues
 
 	return nil
 }

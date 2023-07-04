@@ -9,18 +9,12 @@ package server
 import (
 	"fmt"
 
-	"github.com/edgexfoundry/device-sdk-go/v2/pkg/service"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/gopcua/opcua/ua"
 )
 
 func (s *Server) ProcessMethodCall(method string, parameters []string) (interface{}, error) {
-	ds := service.RunningService()
-	if ds == nil {
-		return nil, fmt.Errorf("unable to get device service instance")
-	}
-
-	resource, ok := ds.DeviceResource(s.deviceName, method)
+	resource, ok := s.sdk.DeviceResource(s.deviceName, method)
 	if !ok {
 		return nil, fmt.Errorf("method not found")
 	}

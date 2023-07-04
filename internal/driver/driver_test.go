@@ -11,9 +11,10 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/server"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
+	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces/mocks"
+	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/clients/logger"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 )
 
 func newMockDriver() *Driver {
@@ -221,7 +222,7 @@ func TestDriver_Initialize(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d := &Driver{}
-			if err := d.Initialize(logger.MockLogger{}, make(chan<- *sdkModel.AsyncValues), make(chan<- []sdkModel.DiscoveredDevice)); (err != nil) != tt.wantErr {
+			if err := d.Initialize(mocks.NewDeviceServiceSDK(t)); (err != nil) != tt.wantErr {
 				t.Errorf("Driver.Initialize() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

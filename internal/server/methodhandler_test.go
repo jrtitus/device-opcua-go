@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
+	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces/mocks"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )
@@ -102,7 +102,7 @@ func TestDriver_makeMethodCall(t *testing.T) {
 			}
 
 			s := &Server{
-				logger: &logger.MockLogger{},
+				sdk: mocks.NewDeviceServiceSDK(t),
 				client: &Client{
 					client,
 					context.Background(),

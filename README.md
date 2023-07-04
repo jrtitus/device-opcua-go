@@ -26,21 +26,25 @@ Download the Prosys OPC UA Simulation Server from [here](https://www.prosysopc.c
 
 Define devices for device-sdk to auto upload device profile and create device instance. Please modify `devices.toml` file found under the `./cmd/res/devices` folder.
 
-```toml
-# Pre-define Devices
-[[DeviceList]]
-  Name = "SimulationServer"
-  Profile = "OPCUA-Server"
-  Description = "OPCUA device is created for test purpose"
-  Labels = [ "test" ]
-  [DeviceList.Protocols]
-      [DeviceList.Protocols.opcua]
-          Endpoint = "opc.tcp://127.0.0.1:53530/OPCUA/SimulationServer"
-          Policy = "None"                # Security policy: None, Basic128Rsa15, Basic256, Basic256Sha256. Default: None
-          Mode = "None"                  # Security mode: None, Sign, SignAndEncrypt. Default: None
-          CertFile = ""                  # Path to cert.pem. Required for security mode/policy != None
-          KeyFile = ""                   # Path to private key.pem. Required for security mode/policy != None
-          Resources = "Counter,Random"   # Device resources related to Node IDs to subscribe to (comma-separated values)
+```yaml
+DeviceList:
+  - Name: SimulationServer
+    ProfileName: OPCUA-Server
+    Description: OPCUA device is created for test purpose
+    Labels:
+      - test
+    Protocols:
+      opcua:
+        Endpoint: "opc.tcp://127.0.0.1:53530/OPCUA/SimulationServer"
+        # Security policy: None, Basic128Rsa15, Basic256, Basic256Sha256. Default: None
+        Policy: None
+        # Security mode: None, Sign, SignAndEncrypt. Default: None
+        Mode: None
+        # Path to cert.pem. Required for security mode/policy != None
+        CertFile: ""
+        # Path to private key.pem. Required for security mode/policy != None
+        KeyFile: ""
+        Resources: "Counter,Random"
 ```
 
 ## Device Profile
@@ -55,15 +59,13 @@ OPC UA methods can be referenced in the device profile and called with a read co
 
 ```yaml
 deviceResources:
-  -
-    name: "SetDefaultsMethod"
+  - name: "SetDefaultsMethod"
     description: "Set all variables to their default values"
     isHidden: "false" # Specifies if the method can be called
     properties:
       valueType: "String" # Response type will always be String
       readWrite: "R"
-    attributes:
-      { methodId: "ns=5;s=Defaults", objectId: "ns=5;i=1111" }
+    attributes: { methodId: "ns=5;s=Defaults", objectId: "ns=5;i=1111" }
 ```
 
 Notice that method calls require specifying the Node ID of both the method and its parent object.
@@ -113,13 +115,13 @@ Running unit tests starts a mock OPCUA server on port `48408`.
 
 The mock server defines the following attributes:
 
-| Variable Name | Type | Default Value | Writable |
-|-|-|-|-|
-|`ro_bool`|`Boolean`|`True`||
-|`rw_bool`|`Boolean`|`True`|✅|
-|`ro_int32`|`Int32`|`5`||
-|`rw_int32`|`Int32`|`5`|✅|
-|`square`|`Method`|`Int64` (return value)||
+| Variable Name | Type      | Default Value          | Writable |
+| ------------- | --------- | ---------------------- | -------- |
+| `ro_bool`     | `Boolean` | `True`                 |          |
+| `rw_bool`     | `Boolean` | `True`                 | ✅       |
+| `ro_int32`    | `Int32`   | `5`                    |          |
+| `rw_int32`    | `Int32`   | `5`                    | ✅       |
+| `square`      | `Method`  | `Int64` (return value) |          |
 
 All attributes are defined in `ns=2`.
 

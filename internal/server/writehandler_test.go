@@ -11,12 +11,13 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
+	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces/mocks"
+	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
+	"github.com/spf13/cast"
 )
 
 func TestDriver_ProcessWriteCommands(t *testing.T) {
@@ -105,7 +106,7 @@ func TestDriver_ProcessWriteCommands(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			// create device client and open connection
-			endpoint := tt.args.protocols[Protocol][Endpoint]
+			endpoint := cast.ToString(tt.args.protocols[Protocol][Endpoint])
 			client := opcua.NewClient(endpoint, opcua.SecurityMode(ua.MessageSecurityModeNone))
 			defer client.Close()
 			if err := client.Connect(context.Background()); err != nil {
@@ -116,7 +117,7 @@ func TestDriver_ProcessWriteCommands(t *testing.T) {
 			}
 
 			s := &Server{
-				logger: &logger.MockLogger{},
+				sdk: mocks.NewDeviceServiceSDK(t),
 				client: &Client{
 					client,
 					context.Background(),

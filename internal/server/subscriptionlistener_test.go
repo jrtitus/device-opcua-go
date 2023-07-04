@@ -10,8 +10,7 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
+	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces/mocks"
 	"github.com/gopcua/opcua/ua"
 )
 
@@ -78,8 +77,7 @@ func TestDriver_initClient(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ch := make(chan *sdkModel.AsyncValues)
-			s := NewServer("Test", logger.MockLogger{}, ch)
+			s := NewServer("Test", mocks.NewDeviceServiceSDK(t))
 
 			if !tt.wantErr {
 				server := test.NewServer("../test/opcua_server.py")
@@ -117,8 +115,7 @@ func TestDriver_handleDataChange(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ch := make(chan *sdkModel.AsyncValues)
-			s := NewServer("Test", logger.MockLogger{}, ch)
+			s := NewServer("Test", mocks.NewDeviceServiceSDK(t))
 			s.handleDataChange(tt.dcn)
 		})
 	}

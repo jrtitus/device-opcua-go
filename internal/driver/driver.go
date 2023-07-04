@@ -14,10 +14,10 @@ import (
 	"sync"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/server"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
-	"github.com/edgexfoundry/device-sdk-go/v2/pkg/service"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
+	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces"
+	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/clients/logger"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 )
 
 var once sync.Once
@@ -29,10 +29,11 @@ type Driver struct {
 	AsyncCh   chan<- *sdkModel.AsyncValues
 	mu        sync.Mutex
 	serverMap map[string]*server.Server
+	sdk       interfaces.DeviceServiceSDK
 }
 
 // NewProtocolDriver returns a new protocol driver object
-func NewProtocolDriver() sdkModel.ProtocolDriver {
+func NewProtocolDriver() interfaces.ProtocolDriver {
 	once.Do(func() {
 		driver = new(Driver)
 	})
@@ -40,27 +41,23 @@ func NewProtocolDriver() sdkModel.ProtocolDriver {
 }
 
 // Initialize performs protocol-specific initialization for the device service
-func (d *Driver) Initialize(lc logger.LoggingClient, asyncCh chan<- *sdkModel.AsyncValues, deviceCh chan<- []sdkModel.DiscoveredDevice) error {
-	d.Logger = lc
-	d.AsyncCh = asyncCh
+func (d *Driver) Initialize(sdk interfaces.DeviceServiceSDK) error {
+	d.Logger = sdk.LoggingClient()
+	d.AsyncCh = sdk.AsyncValuesChannel()
+	d.sdk = sdk
 	d.mu.Lock()
 	d.serverMap = make(map[string]*server.Server)
 	d.mu.Unlock()
 
-	ds := service.RunningService()
-	if ds == nil {
-		return fmt.Errorf("unable to get device service instance")
-	}
-
 	// When the service is initialized, add pre-existing devices to the server map
-	for _, v := range ds.Devices() {
+	for _, v := range sdk.Devices() {
 		if err := d.AddDevice(v.Name, v.Protocols, v.AdminState); err != nil {
 			d.Logger.Errorf("[%s] error adding device to server map: %v", v.Name, err)
 		}
 	}
 
 	// Define custom API endpoints
-	if err := ds.AddRoute("/api/v2/call", handleMethodCall, http.MethodPost); err != nil {
+	if err := sdk.AddRoute("/api/v3/call", handleMethodCall, http.MethodPost); err != nil {
 		d.Logger.Errorf("unable to add custom route to device service: %v", err)
 	}
 
@@ -72,7 +69,7 @@ func (d *Driver) Initialize(lc logger.LoggingClient, asyncCh chan<- *sdkModel.As
 func (d *Driver) AddDevice(deviceName string, protocols map[string]models.ProtocolProperties, adminState models.AdminState) error {
 	d.Logger.Debugf("Device %s is added. Starting subscription mechanism...", deviceName)
 	d.mu.Lock()
-	s := server.NewServer(deviceName, d.Logger, d.AsyncCh)
+	s := server.NewServer(deviceName, d.sdk)
 	d.serverMap[deviceName] = s
 	d.mu.Unlock()
 
@@ -103,6 +100,23 @@ func (d *Driver) RemoveDevice(deviceName string, protocols map[string]models.Pro
 		return nil
 	}
 	return serverNotFoundError(deviceName)
+}
+
+func (d *Driver) ValidateDevice(device models.Device) error {
+	cfg, err := server.NewConfig(device.Protocols["opcua"])
+	if err != nil {
+		return fmt.Errorf("error reading protocol properties, %v", err)
+	}
+
+	return server.Validate(cfg)
+}
+
+func (d *Driver) Discover() error {
+	return fmt.Errorf("driver's Discover function isn't implemented")
+}
+
+func (d *Driver) Start() error {
+	return nil
 }
 
 // Stop the protocol-specific DS code to shutdown gracefully, or
