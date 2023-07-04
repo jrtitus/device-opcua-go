@@ -216,3 +216,6 @@ https://github.com/nats-io/nuid/blob/master/LICENSE
 
 github.com/gabriel-vasile/mimetype (MIT) https://github.com/gabriel-vasile/mimetype
 https://github.com/gabriel-vasile/mimetype/blob/master/LICENSE
+
+golang.org/x/exp (BSD-3) https://pkg.go.dev/golang.org/x/exp
+https://pkg.go.dev/golang.org/x/exp?tab=licenses
