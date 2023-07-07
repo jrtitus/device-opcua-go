@@ -13,6 +13,7 @@ DOCKERS=docker_device_opcua_go
 VERSION=$(shell cat ./VERSION 2>/dev/null || echo 0.0.0)
 GIT_SHA=$(shell git rev-parse HEAD)
 
+GOBIN=$$(go env GOPATH)/bin
 GOFLAGS=-ldflags "-X github.com/edgexfoundry/device-opcua-go.Version=$(VERSION)" -trimpath -mod=readonly
 
 tidy:
@@ -30,11 +31,10 @@ unittest:
 	go test ./... -coverprofile=coverage.out ./...
 
 install-lint:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$$(go env GOPATH)/bin v1.52.2
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.52.2
 
 lint:
-	@which golangci-lint >/dev/null || echo "WARNING: go linter not installed. To install, run make install-lint"
-	@if [ "z${ARCH}" = "zx86_64" ] && which golangci-lint >/dev/null ; then golangci-lint run --config .golangci.yml ; else echo "WARNING: Linting skipped (not on x86_64 or linter not installed)"; fi
+	@if [ -f $(GOBIN)/golangci-lint ] ; then $(GOBIN)/golangci-lint run --config .golangci.yml ; else echo "WARNING: go linter not installed. To install, run make install-lint"; fi
 
 test: unittest lint
 	go vet ./...
