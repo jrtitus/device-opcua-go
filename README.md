@@ -1,5 +1,7 @@
 # OPC-UA Device Service
 
+> NOTE: This service is designed for EdgeX Foundry v3.0
+
 ## Overview
 
 This repository is a Go-based EdgeX Foundry Device Service which uses OPC-UA protocol to interact with the devices or IoT objects.
@@ -44,7 +46,7 @@ DeviceList:
         CertFile: ""
         # Path to private key.pem. Required for security mode/policy != None
         KeyFile: ""
-        Resources: "Counter,Random"
+        Resources: [Counter, Random]
 ```
 
 ## Device Profile
@@ -70,7 +72,7 @@ deviceResources:
 
 Notice that method calls require specifying the Node ID of both the method and its parent object.
 
-A REST endpoint is available at `POST /api/v2/call` to handle method calls. The request body is defined as follows:
+A REST endpoint is available at `POST /api/v3/call` to handle method calls. The request body is defined as follows:
 
 ```json
 {
