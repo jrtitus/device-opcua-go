@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
-	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces/mocks"
 	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
@@ -116,13 +115,9 @@ func TestDriver_ProcessWriteCommands(t *testing.T) {
 				return
 			}
 
-			s := &Server{
-				sdk: mocks.NewDeviceServiceSDK(t),
-				client: &Client{
-					client,
-					context.Background(),
-				},
-			}
+			dsMock := test.NewDSMock(t)
+			s := NewServer(tt.args.deviceName, dsMock)
+			s.client = &Client{client, context.Background()}
 			if err := s.ProcessWriteCommands(tt.args.reqs, tt.args.params); (err != nil) != tt.wantErr {
 				t.Errorf("Driver.HandleWriteCommands() error = %v, wantErr %v", err, tt.wantErr)
 			}

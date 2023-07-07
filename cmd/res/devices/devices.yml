@@ -11,4 +11,4 @@ DeviceList:
         Mode: None
         CertFile: ""
         KeyFile: ""
-        Resources: "Counter,Random"
+        Resources: [Counter, Random]

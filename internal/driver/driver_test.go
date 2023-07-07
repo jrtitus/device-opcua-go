@@ -7,49 +7,26 @@
 package driver
 
 import (
+	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/server"
+	"github.com/edgexfoundry/device-opcua-go/internal/test"
 	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces/mocks"
 	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/clients/logger"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
+	"github.com/stretchr/testify/mock"
 )
 
-func newMockDriver() *Driver {
+func newMockDriver(t *testing.T) (*Driver, *mocks.DeviceServiceSDK) {
 	d := NewProtocolDriver().(*Driver)
-	d.Logger = logger.MockLogger{}
-	d.AsyncCh = make(chan<- *sdkModel.AsyncValues)
-	d.serverMap = make(map[string]*server.Server)
-	return d
-}
+	dsMock := test.NewDSMock(t)
 
-func TestDriver_AddDevice(t *testing.T) {
-	type args struct {
-		deviceName string
-		protocols  map[string]models.ProtocolProperties
-		adminState models.AdminState
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name:    "OK - device add success",
-			args:    args{deviceName: "Test"},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			d := newMockDriver()
-			if err := d.AddDevice(tt.args.deviceName, tt.args.protocols, tt.args.adminState); (err != nil) != tt.wantErr {
-				t.Errorf("Driver.AddDevice() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	d.sdk = dsMock
+	d.serverMap = make(map[string]*server.Server)
+	return d, dsMock
 }
 
 func TestDriver_UpdateDevice(t *testing.T) {
@@ -68,18 +45,10 @@ func TestDriver_UpdateDevice(t *testing.T) {
 			args:    args{deviceName: "Test"},
 			wantErr: true,
 		},
-		{
-			name:    "OK - device update success",
-			args:    args{deviceName: "Test"},
-			wantErr: false,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := newMockDriver()
-			if tt.wantErr == false {
-				_ = d.AddDevice(tt.args.deviceName, tt.args.protocols, tt.args.adminState)
-			}
+			d, _ := newMockDriver(t)
 			if err := d.UpdateDevice(tt.args.deviceName, tt.args.protocols, tt.args.adminState); (err != nil) != tt.wantErr {
 				t.Errorf("Driver.UpdateDevice() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -91,7 +60,6 @@ func TestDriver_RemoveDevice(t *testing.T) {
 	type args struct {
 		deviceName string
 		protocols  map[string]models.ProtocolProperties
-		adminState models.AdminState
 	}
 	tests := []struct {
 		name    string
@@ -104,16 +72,15 @@ func TestDriver_RemoveDevice(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "OK - device removal success",
-			args:    args{deviceName: "Test"},
-			wantErr: false,
+			name: "OK - device removal success",
+			args: args{deviceName: "Test"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := newMockDriver()
-			if tt.wantErr == false {
-				_ = d.AddDevice(tt.args.deviceName, tt.args.protocols, tt.args.adminState)
+			d, _ := newMockDriver(t)
+			if !tt.wantErr {
+				d.serverMap[tt.args.deviceName] = &server.Server{}
 			}
 			if err := d.RemoveDevice(tt.args.deviceName, tt.args.protocols); (err != nil) != tt.wantErr {
 				t.Errorf("Driver.RemoveDevice() error = %v, wantErr %v", err, tt.wantErr)
@@ -139,7 +106,7 @@ func TestDriver_Stop(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := newMockDriver()
+			d, _ := newMockDriver(t)
 			if err := d.Stop(tt.args.force); (err != nil) != tt.wantErr {
 				t.Errorf("Driver.Stop() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -168,7 +135,7 @@ func TestDriver_HandleReadCommands(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := newMockDriver()
+			d, _ := newMockDriver(t)
 			got, err := d.HandleReadCommands(tt.args.deviceName, tt.args.protocols, tt.args.reqs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Driver.HandleReadCommands() error = %v, wantErr %v", err, tt.wantErr)
@@ -201,7 +168,7 @@ func TestDriver_HandleWriteCommands(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := newMockDriver()
+			d, _ := newMockDriver(t)
 			if err := d.HandleWriteCommands(tt.args.deviceName, tt.args.protocols, tt.args.reqs, tt.args.params); (err != nil) != tt.wantErr {
 				t.Errorf("Driver.HandleWriteCommands() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -212,18 +179,64 @@ func TestDriver_HandleWriteCommands(t *testing.T) {
 func TestDriver_Initialize(t *testing.T) {
 	tests := []struct {
 		name    string
+		devices []models.Device
+		err     error
 		wantErr bool
 	}{
 		{
-			name:    "NOK - expect error from call to RunningService in test",
+			name:    "NOK - error adding route",
+			err:     fmt.Errorf("error"),
 			wantErr: true,
+		},
+		{
+			name:    "OK - no devices",
+			devices: []models.Device{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &Driver{}
-			if err := d.Initialize(mocks.NewDeviceServiceSDK(t)); (err != nil) != tt.wantErr {
+			d, dsMock := newMockDriver(t)
+			dsMock.On("AddRoute", "/api/v3/call", mock.AnythingOfType("func(http.ResponseWriter, *http.Request)"), http.MethodPost).Return(tt.err)
+			if tt.err == nil {
+				dsMock.On("Devices").Return(tt.devices)
+			}
+			if err := d.Initialize(dsMock); (err != nil) != tt.wantErr {
 				t.Errorf("Driver.Initialize() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDriver_ValidateDevice(t *testing.T) {
+	tests := []struct {
+		name    string
+		device  models.Device
+		wantErr bool
+	}{
+		{
+			name: "NOK - invalid protocol properties",
+			device: models.Device{Protocols: map[string]models.ProtocolProperties{"opcua": {
+				"Foobar": make(chan int, 1), // forces marshalling error
+			}}},
+			wantErr: true,
+		},
+		{
+			name: "OK - valid device",
+			device: models.Device{Protocols: map[string]models.ProtocolProperties{"opcua": {
+				"Endpoint":  "opc.tcp://test",
+				"Policy":    "None",
+				"Mode":      "None",
+				"Resources": []string{"A", "B", "C"},
+				"CertFile":  "",
+				"KeyFile":   "",
+			}}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d, _ := newMockDriver(t)
+			if err := d.ValidateDevice(tt.device); (err != nil) != tt.wantErr {
+				t.Errorf("Driver.ValidateDevice() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

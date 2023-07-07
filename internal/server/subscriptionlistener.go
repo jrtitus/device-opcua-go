@@ -11,7 +11,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/result"
@@ -109,11 +108,11 @@ func (s *Server) initClient(config *Config) error {
 	return nil
 }
 
-func (s *Server) configureMonitoredItems(sub *opcua.Subscription, resources string) error {
+func (s *Server) configureMonitoredItems(sub *opcua.Subscription, resources []string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for i, resource := range strings.Split(resources, ",") {
+	for i, resource := range resources {
 		deviceResource, ok := s.sdk.DeviceResource(s.deviceName, resource)
 		if !ok {
 			s.sdk.LoggingClient().Warnf("[%s] unable to find resource with name %s", s.deviceName, resource)
@@ -157,8 +156,7 @@ func (s *Server) handleDataChange(dcn *ua.DataChangeNotification) {
 func (s *Server) onIncomingDataReceived(data interface{}, nodeResourceName string) error {
 	deviceResource, ok := s.sdk.DeviceResource(s.deviceName, nodeResourceName)
 	if !ok {
-		s.sdk.LoggingClient().Warnf("[%s] Incoming reading ignored. No DeviceObject found: deviceResource=%v value=%v", s.deviceName, nodeResourceName, data)
-		return nil
+		return fmt.Errorf("[%s] Incoming reading ignored. No DeviceObject found: deviceResource=%v value=%v", s.deviceName, nodeResourceName, data)
 	}
 
 	req := sdkModels.CommandRequest{
@@ -169,8 +167,7 @@ func (s *Server) onIncomingDataReceived(data interface{}, nodeResourceName strin
 	reading := data
 	result, err := result.NewResult(req, reading)
 	if err != nil {
-		s.sdk.LoggingClient().Warnf("[%s] Incoming reading ignored. deviceResource=%v value=%v", s.deviceName, nodeResourceName, data)
-		return nil
+		return fmt.Errorf("[%s] Incoming reading ignored. deviceResource=%v value=%v", s.deviceName, nodeResourceName, data)
 	}
 
 	asyncValues := &sdkModels.AsyncValues{

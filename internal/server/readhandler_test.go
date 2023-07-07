@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
-	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces/mocks"
 	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
@@ -137,13 +136,9 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 				return
 			}
 
-			s := &Server{
-				sdk: mocks.NewDeviceServiceSDK(t),
-				client: &Client{
-					client,
-					context.Background(),
-				},
-			}
+			dsMock := test.NewDSMock(t)
+			s := NewServer(tt.args.deviceName, dsMock)
+			s.client = &Client{client, context.Background()}
 			got, err := s.ProcessReadCommands(tt.args.reqs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Driver.HandleReadCommands() error = %v, wantErr %v", err, tt.wantErr)
