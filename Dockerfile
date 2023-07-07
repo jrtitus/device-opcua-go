@@ -14,7 +14,10 @@ COPY go.* ./
 
 RUN [ ! -d "vendor" ] && go mod download all || echo "skipping..."
 
-COPY . .
+ADD cmd cmd
+ADD internal internal 
+ADD pkg pkg
+COPY version.go Makefile ./
 
 ARG ADD_BUILD_TAGS=""
 RUN make -e ADD_BUILD_TAGS=$ADD_BUILD_TAGS build
@@ -30,7 +33,7 @@ EXPOSE 59997
 
 COPY --from=builder /device-opcua-go/cmd/device-opcua /
 COPY --from=builder /device-opcua-go/cmd/res /res
-COPY LICENSE /
+COPY LICENSE Attribution.txt /
 
 ENTRYPOINT ["/device-opcua"]
 CMD ["--cp=consul://edgex-core-consul:8500", "--registry"]
