@@ -26,16 +26,16 @@ Download the Prosys OPC UA Simulation Server from [here](https://www.prosysopc.c
 
 ### Pre-defined Devices
 
-Define devices for device-sdk to auto upload device profile and create device instance. Please modify `devices.toml` file found under the `./cmd/res/devices` folder.
+Define devices for device-sdk to auto upload device profile and create device instance. Please modify `devices.yml` file found under the `./cmd/res/devices` folder.
 
 ```yaml
-DeviceList:
-  - Name: SimulationServer
-    ProfileName: OPCUA-Server
-    Description: OPCUA device is created for test purpose
-    Labels:
+deviceList:
+  - name: SimulationServer
+    profileName: OPCUA-Server
+    description: OPCUA device is created for test purpose
+    labels:
       - test
-    Protocols:
+    protocols:
       opcua:
         Endpoint: "opc.tcp://127.0.0.1:53530/OPCUA/SimulationServer"
         # Security policy: None, Basic128Rsa15, Basic256, Basic256Sha256. Default: None

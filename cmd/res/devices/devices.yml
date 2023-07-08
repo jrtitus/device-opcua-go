@@ -1,10 +1,10 @@
-DeviceList:
-  - Name: SimulationServer
-    ProfileName: OPCUA-Server
-    Description: OPCUA device is created for test purpose
-    Labels:
+deviceList:
+  - name: SimulationServer
+    profileName: OPCUA-Server
+    description: OPCUA device is created for test purpose
+    labels:
       - test
-    Protocols:
+    protocols:
       opcua:
         Endpoint: "opc.tcp://127.0.0.1:53530/OPCUA/SimulationServer"
         Policy: None
