@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos/common"
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/cast"
 )
@@ -52,14 +52,14 @@ func handleMethodCall(w http.ResponseWriter, r *http.Request) {
 	var req MethodRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		driver.Logger.Errorf("invalid request: %v", err)
+		driver.sdk.LoggingClient().Errorf("invalid request: %v", err)
 		writeResponse(w, id, "invalid request", http.StatusBadRequest)
 		return
 	}
 
 	if err := req.validate(); err != nil {
 		msg := fmt.Sprintf("invalid request: %v", err)
-		driver.Logger.Error(msg)
+		driver.sdk.LoggingClient().Error(msg)
 		writeResponse(w, id, msg, http.StatusBadRequest)
 		return
 	}
@@ -74,7 +74,7 @@ func handleMethodCall(w http.ResponseWriter, r *http.Request) {
 	// call to method with parameters - see methodhandler
 	response, err := server.ProcessMethodCall(req.MethodName, req.Parameters)
 	if err != nil {
-		driver.Logger.Errorf(err.Error())
+		driver.sdk.LoggingClient().Errorf(err.Error())
 		writeResponse(w, id, "error interacting with device", http.StatusInternalServerError)
 		return
 	}

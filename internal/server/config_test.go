@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 )
 
 func TestNewConfig(t *testing.T) {
@@ -21,37 +21,11 @@ func TestNewConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "NOK - nil props",
-			props:   nil,
-			wantErr: true,
-		},
-		{
-			name:    "NOK - missing Endpoint",
-			props:   models.ProtocolProperties{},
-			wantErr: true,
-		},
-		{
-			name: "NOK - invalid policy or mode",
-			props: models.ProtocolProperties{
-				Endpoint: "opc.tcp://test",
-			},
-			wantErr: true,
-		},
-		{
-			name: "NOK - missing certfile or keyfile",
-			props: models.ProtocolProperties{
-				Endpoint: "opc.tcp://test",
-				"Policy": "Basic256",
-				"Mode":   "Sign",
-			},
-			wantErr: true,
-		},
-		{
 			name: "OK - endpoint and resources",
 			props: models.ProtocolProperties{
-				Endpoint: "opc.tcp://test", "Policy": "None", "Mode": "None", "Resources": "A,B,C"},
+				Endpoint: "opc.tcp://test", "Policy": "None", "Mode": "None", "Resources": []string{"A", "B", "C"}},
 			want: &Config{
-				Endpoint: "opc.tcp://test", Policy: "None", Mode: "None", Resources: "A,B,C", CertFile: "", KeyFile: ""},
+				Endpoint: "opc.tcp://test", Policy: "None", Mode: "None", Resources: []string{"A", "B", "C"}, CertFile: "", KeyFile: ""},
 		},
 	}
 	for _, tt := range tests {
@@ -63,6 +37,52 @@ func TestNewConfig(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewConfig() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		cfg     *Config
+		wantErr bool
+	}{
+		{
+			name:    "NOK - nil props",
+			wantErr: true,
+		},
+		{
+			name:    "NOK - missing Endpoint",
+			cfg:     &Config{},
+			wantErr: true,
+		},
+		{
+			name: "NOK - invalid policy or mode",
+			cfg: &Config{
+				Endpoint: "opc.tcp://test",
+			},
+			wantErr: true,
+		},
+		{
+			name: "NOK - missing certfile or keyfile",
+			cfg: &Config{
+				Endpoint: "opc.tcp://test",
+				Policy:   "Basic256",
+				Mode:     "Sign",
+			},
+			wantErr: true,
+		},
+		{
+			name: "OK - endpoint and resources",
+			cfg: &Config{
+				Endpoint: "opc.tcp://test", Policy: "None", Mode: "None", Resources: []string{"A", "B", "C"}, CertFile: "", KeyFile: ""},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := Validate(tt.cfg); (err != nil) != tt.wantErr {
+				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

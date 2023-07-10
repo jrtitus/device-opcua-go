@@ -12,15 +12,16 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestDriver_makeMethodCall(t *testing.T) {
+func TestDriver_ProcessMethodCall(t *testing.T) {
 	type args struct {
 		resource   models.DeviceResource
+		method     string
 		parameters []string
 	}
 	tests := []struct {
@@ -29,6 +30,13 @@ func TestDriver_makeMethodCall(t *testing.T) {
 		want    interface{}
 		wantErr bool
 	}{
+		{
+			name: "NOK - method call - method not found",
+			args: args{
+				method: "TestResource0",
+			},
+			wantErr: true,
+		},
 		{
 			name: "NOK - method call - method is hidden",
 			args: args{
@@ -101,14 +109,11 @@ func TestDriver_makeMethodCall(t *testing.T) {
 				return
 			}
 
-			s := &Server{
-				logger: &logger.MockLogger{},
-				client: &Client{
-					client,
-					context.Background(),
-				},
-			}
-			got, err := s.makeMethodCall(tt.args.resource, tt.args.parameters)
+			dsMock := test.NewDSMock(t)
+			s := NewServer("test", dsMock)
+			s.client = &Client{client, context.Background()}
+			dsMock.On("DeviceResource", mock.Anything, tt.args.method).Return(tt.args.resource, tt.args.resource.Name != "")
+			got, err := s.ProcessMethodCall(tt.args.method, tt.args.parameters)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Driver.HandleReadCommands() error = %v, wantErr %v", err, tt.wantErr)
 				return

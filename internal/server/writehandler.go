@@ -12,7 +12,7 @@ import (
 	"fmt"
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/command"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
+	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
 	"github.com/gopcua/opcua/ua"
 )
 
@@ -20,7 +20,7 @@ func (s *Server) ProcessWriteCommands(reqs []sdkModel.CommandRequest, params []*
 	for i, req := range reqs {
 		err := s.handleWriteCommandRequest(req, params[i])
 		if err != nil {
-			s.logger.Errorf("Driver.HandleWriteCommands: Handle write commands failed: %v", err)
+			s.sdk.LoggingClient().Errorf("Driver.HandleWriteCommands: Handle write commands failed: %v", err)
 			return err
 		}
 	}
@@ -61,9 +61,9 @@ func (s *Server) handleWriteCommandRequest(req sdkModel.CommandRequest,
 
 	resp, err := s.client.Write(request)
 	if err != nil {
-		s.logger.Errorf("Driver.handleWriteCommands: Write value %v failed: %s", v, err)
+		s.sdk.LoggingClient().Errorf("Driver.handleWriteCommands: Write value %v failed: %s", v, err)
 		return err
 	}
-	s.logger.Infof("Driver.handleWriteCommands: write sucessfully, %v", resp.Results[0])
+	s.sdk.LoggingClient().Infof("Driver.handleWriteCommands: write sucessfully, %v", resp.Results[0])
 	return nil
 }

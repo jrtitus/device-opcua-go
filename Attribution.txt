@@ -16,26 +16,26 @@ https://github.com/davecgh/go-spew/blob/master/LICENSE
 github.com/eclipse/paho.mqtt.golang (EPL 2.0) https://github.com/eclipse/paho.mqtt.golang
 https://github.com/eclipse/paho.mqtt.golang/blob/master/LICENSE
 
-github.com/edgexfoundry/device-sdk-go/v2 (Apache 2.0) https://github.com/edgexfoundry/device-sdk-go/v2
-https://github.com/edgexfoundry/device-sdk-go/v2/blob/master/LICENSE
+github.com/edgexfoundry/device-sdk-go/v3 (Apache 2.0) https://github.com/edgexfoundry/device-sdk-go/v3
+https://github.com/edgexfoundry/device-sdk-go/v3/blob/master/LICENSE
 
-github.com/edgexfoundry/go-mod-bootstrap/v2 (Apache 2.0) https://github.com/edgexfoundry/go-mod-bootstrap/v2
-https://github.com/edgexfoundry/go-mod-bootstrap/v2/blob/master/LICENSE
+github.com/edgexfoundry/go-mod-bootstrap/v3 (Apache 2.0) https://github.com/edgexfoundry/go-mod-bootstrap/v3
+https://github.com/edgexfoundry/go-mod-bootstrap/v3/blob/master/LICENSE
 
-github.com/edgexfoundry/go-mod-configuration/v2 (Apache 2.0) https://github.com/edgexfoundry/go-mod-configuration/v2
-https://github.com/edgexfoundry/go-mod-configuration/v2/blob/master/LICENSE
+github.com/edgexfoundry/go-mod-configuration/v3 (Apache 2.0) https://github.com/edgexfoundry/go-mod-configuration/v3
+https://github.com/edgexfoundry/go-mod-configuration/v3/blob/master/LICENSE
 
-github.com/edgexfoundry/go-mod-core-contracts/v2 (Apache 2.0) https://github.com/edgexfoundry/go-mod-core-contracts/v2
-https://github.com/edgexfoundry/go-mod-core-contracts/v2/blob/master/LICENSE
+github.com/edgexfoundry/go-mod-core-contracts/v3 (Apache 2.0) https://github.com/edgexfoundry/go-mod-core-contracts/v3
+https://github.com/edgexfoundry/go-mod-core-contracts/v3/blob/master/LICENSE
 
-github.com/edgexfoundry/go-mod-messaging/v2 (Apache 2.0) https://github.com/edgexfoundry/go-mod-messaging/v2
-https://github.com/edgexfoundry/go-mod-messaging/v2/blob/master/LICENSE
+github.com/edgexfoundry/go-mod-messaging/v3 (Apache 2.0) https://github.com/edgexfoundry/go-mod-messaging/v3
+https://github.com/edgexfoundry/go-mod-messaging/v3/blob/master/LICENSE
 
-github.com/edgexfoundry/go-mod-registry/v2 (Apache 2.0) https://github.com/edgexfoundry/go-mod-registry/v2
-https://github.com/edgexfoundry/go-mod-registry/v2/blob/master/LICENSE
+github.com/edgexfoundry/go-mod-registry/v3 (Apache 2.0) https://github.com/edgexfoundry/go-mod-registry/v3
+https://github.com/edgexfoundry/go-mod-registry/v3/blob/master/LICENSE
 
-github.com/edgexfoundry/go-mod-secrets/v2 (Apache 2.0) https://github.com/edgexfoundry/go-mod-secrets/v2
-https://github.com/edgexfoundry/go-mod-secrets/v2/blob/master/LICENSE
+github.com/edgexfoundry/go-mod-secrets/v3 (Apache 2.0) https://github.com/edgexfoundry/go-mod-secrets/v3
+https://github.com/edgexfoundry/go-mod-secrets/v3/blob/master/LICENSE
 
 github.com/fatih/color (MIT) https://github.com/fatih/color
 https://github.com/fatih/color/blob/master/LICENSE.md
@@ -218,4 +218,13 @@ github.com/gabriel-vasile/mimetype (MIT) https://github.com/gabriel-vasile/mimet
 https://github.com/gabriel-vasile/mimetype/blob/master/LICENSE
 
 golang.org/x/exp (BSD-3) https://pkg.go.dev/golang.org/x/exp
-https://pkg.go.dev/golang.org/x/exp?tab=licenses
+https://github.com/golang/exp/blob/master/LICENSE
+
+golang.org/x/mod (BSD-3) https://github.com/golang/mod
+https://github.com/golang/mod/blob/master/LICENSE
+
+golang.org/x/tools (BSD-3) https://github.com/golang/tools
+https://github.com/golang/tools/blob/master/LICENSE
+
+github.com/go-jose/go-jose/v3 (Apache-2.0) https://github.com/go-jose/go-jose
+https://github.com/go-jose/go-jose/blob/v3/LICENSE

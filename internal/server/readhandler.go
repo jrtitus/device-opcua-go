@@ -12,7 +12,7 @@ import (
 	"fmt"
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/result"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
+	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
 	"github.com/gopcua/opcua/ua"
 )
 
@@ -22,10 +22,10 @@ func (s *Server) ProcessReadCommands(reqs []sdkModel.CommandRequest) ([]*sdkMode
 	for i, req := range reqs {
 		res, err := s.handleReadCommandRequest(req)
 		if err != nil {
-			s.logger.Errorf("Driver.HandleReadCommands: Handle read commands failed: %v", err)
+			s.sdk.LoggingClient().Errorf("Driver.HandleReadCommands: Handle read commands failed: %v", err)
 			return responses, err
 		}
-		s.logger.Infof("Read command finished: %v", res)
+		s.sdk.LoggingClient().Infof("Read command finished: %v", res)
 		responses[i] = res
 	}
 

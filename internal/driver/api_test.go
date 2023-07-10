@@ -8,13 +8,13 @@ package driver
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/server"
-	"github.com/stretchr/testify/mock"
+	"github.com/edgexfoundry/device-opcua-go/internal/test"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 )
 
 func TestMethodRequest_validate(t *testing.T) {
@@ -57,22 +57,6 @@ func TestMethodRequest_validate(t *testing.T) {
 	}
 }
 
-type responseWriterMock struct {
-	mock.Mock
-}
-
-func (r *responseWriterMock) Write([]byte) (int, error) {
-	return 0, nil
-}
-
-func (r *responseWriterMock) Header() http.Header {
-	return make(http.Header)
-}
-
-func (r *responseWriterMock) WriteHeader(statusCode int) {
-	fmt.Printf("StatusCode=%d", statusCode)
-}
-
 func Test_handleMethodCall(t *testing.T) {
 	type args struct {
 		w    http.ResponseWriter
@@ -82,34 +66,40 @@ func Test_handleMethodCall(t *testing.T) {
 		name       string
 		args       args
 		deviceName string
+		methodName string
+		resource   models.DeviceResource
 	}{
 		{
 			name: "NOK - no body",
-			args: args{w: new(responseWriterMock), body: nil},
+			args: args{w: new(test.ResponseWriterMock), body: nil},
 		},
 		{
 			name: "NOK - invalid body",
-			args: args{w: new(responseWriterMock), body: bytes.NewBufferString("")},
+			args: args{w: new(test.ResponseWriterMock), body: bytes.NewBufferString("")},
 		},
 		{
 			name: "NOK - invalid request",
-			args: args{w: new(responseWriterMock), body: bytes.NewBufferString("{}")},
+			args: args{w: new(test.ResponseWriterMock), body: bytes.NewBufferString("{}")},
 		},
 		{
 			name: "NOK - device not found",
-			args: args{w: new(responseWriterMock), body: bytes.NewBufferString(`{"device":"test","method":"test"}`)},
+			args: args{w: new(test.ResponseWriterMock), body: bytes.NewBufferString(`{"device":"test","method":"test"}`)},
 		},
 		{
-			name:       "NOK - cannot make method call in unit test",
-			args:       args{w: new(responseWriterMock), body: bytes.NewBufferString(`{"device":"test","method":"test"}`)},
+			name:       "NOK - hidden resource",
+			args:       args{w: new(test.ResponseWriterMock), body: bytes.NewBufferString(`{"device":"test","method":"test"}`)},
 			deviceName: "test",
+			methodName: "test",
+			resource:   models.DeviceResource{Name: "test", IsHidden: true},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := newMockDriver()
+			d, dsMock := newMockDriver(t)
 			if tt.deviceName != "" {
-				d.serverMap[tt.deviceName] = new(server.Server)
+				d.serverMap[tt.deviceName] = server.NewServer(tt.deviceName, dsMock)
+
+				dsMock.On("DeviceResource", tt.deviceName, tt.methodName).Return(tt.resource, true)
 			}
 			request, _ := http.NewRequest(http.MethodPost, "", tt.args.body)
 			handleMethodCall(tt.args.w, request)

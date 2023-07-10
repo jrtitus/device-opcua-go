@@ -1,0 +1,23 @@
+MaxEventSize: 0
+
+Writable:
+  LogLevel: INFO
+  InsecureSecrets:
+    OPCUA:
+      SecretName: redisdb
+      SecretData:
+        username: ""
+        password: ""
+
+Service:
+  Host: localhost
+  Port: 59997
+  StartupMsg: device opcua started
+
+MessageBus:
+  Optional:
+    ClientId: device-opcua
+
+Device:
+  DevicesDir: ./res/devices
+  ProfilesDir: ./res/profiles

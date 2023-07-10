@@ -12,12 +12,12 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
+	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
+	"github.com/spf13/cast"
 )
 
 const (
@@ -126,7 +126,7 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// create device client and open connection
-			endpoint := tt.args.protocols[Protocol][Endpoint]
+			endpoint := cast.ToString(tt.args.protocols[Protocol][Endpoint])
 			client := opcua.NewClient(endpoint, opcua.SecurityMode(ua.MessageSecurityModeNone))
 			defer client.Close()
 			if err := client.Connect(context.Background()); err != nil {
@@ -136,13 +136,9 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 				return
 			}
 
-			s := &Server{
-				logger: &logger.MockLogger{},
-				client: &Client{
-					client,
-					context.Background(),
-				},
-			}
+			dsMock := test.NewDSMock(t)
+			s := NewServer(tt.args.deviceName, dsMock)
+			s.client = &Client{client, context.Background()}
 			got, err := s.ProcessReadCommands(tt.args.reqs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Driver.HandleReadCommands() error = %v, wantErr %v", err, tt.wantErr)

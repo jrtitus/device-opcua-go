@@ -1,14 +1,5 @@
 .PHONY: build test unittest lint clean docker run
 
-GO=CGO_ENABLED=0 GO111MODULE=on go
-GOCGO=CGO_ENABLED=1 GO111MODULE=on go
-
-# see https://shibumi.dev/posts/hardening-executables
-CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2"
-CGO_CFLAGS="-O2 -pipe -fno-plt"
-CGO_CXXFLAGS="-O2 -pipe -fno-plt"
-CGO_LDFLAGS="-Wl,-O1,-sort-common,-as-needed,-z,relro,-z,now"
-
 MICROSERVICES=cmd/device-opcua
 
 ARCH=$(shell uname -m)
@@ -22,8 +13,8 @@ DOCKERS=docker_device_opcua_go
 VERSION=$(shell cat ./VERSION 2>/dev/null || echo 0.0.0)
 GIT_SHA=$(shell git rev-parse HEAD)
 
-GOFLAGS=-ldflags "-X github.com/edgexfoundry/device-opcua-go.Version=$(VERSION)"
-CGOFLAGS=-ldflags "-linkmode=external -X github.com/edgexfoundry/device-opcua-go.Version=$(VERSION)" -trimpath -mod=readonly -buildmode=pie
+GOBIN=$$(go env GOPATH)/bin
+GOFLAGS=-ldflags "-X github.com/edgexfoundry/device-opcua-go.Version=$(VERSION)" -trimpath -mod=readonly
 
 tidy:
 	go mod tidy
@@ -34,17 +25,19 @@ build-nats:
 	make -e ADD_BUILD_TAGS=include_nats_messaging build
 
 cmd/device-opcua:
-	$(GOCGO) build -tags "$(ADD_BUILD_TAGS)" $(CGOFLAGS) -o $@ ./cmd
+	CGO_ENABLED=0 go build -tags "$(ADD_BUILD_TAGS)" $(GOFLAGS) -o $@ ./cmd
 
 unittest:
-	$(GOCGO) test ./... -coverprofile=coverage.out ./...
+	go test ./... -coverprofile=coverage.out ./...
+
+install-lint:
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.52.2
 
 lint:
-	@which golangci-lint >/dev/null || echo "WARNING: go linter not installed. To install, run\n  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$$(go env GOPATH)/bin v1.52.2"
-	@if [ "z${ARCH}" = "zx86_64" ] && which golangci-lint >/dev/null ; then golangci-lint run --config .golangci.yml ; else echo "WARNING: Linting skipped (not on x86_64 or linter not installed)"; fi
+	@if [ -f $(GOBIN)/golangci-lint ] ; then $(GOBIN)/golangci-lint run --config .golangci.yml ; else echo "WARNING: go linter not installed. To install, run make install-lint"; fi
 
 test: unittest lint
-	$(GOCGO) vet ./...
+	go vet ./...
 	gofmt -l $$(find . -type f -name '*.go'| grep -v "/vendor/")
 	[ "`gofmt -l $$(find . -type f -name '*.go'| grep -v "/vendor/")`" = "" ]
 	./bin/test-attribution-txt.sh
@@ -61,7 +54,6 @@ docker_device_opcua_go:
 	docker build \
 		--label "git_sha=$(GIT_SHA)" \
 		--build-arg ADD_BUILD_TAGS=$(ADD_BUILD_TAGS) \
-		-t edgexfoundry/device-opcua-go:$(GIT_SHA) \
 		-t edgexfoundry/device-opcua-go:$(VERSION)-dev \
 		.
 
@@ -69,4 +61,4 @@ docker-nats:
 	make -e ADD_BUILD_TAGS=include_nats_messaging docker
 
 vendor:
-	$(GO) mod vendor
+	CGO_ENABLED=0 go mod vendor

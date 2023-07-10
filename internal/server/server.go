@@ -10,8 +10,7 @@ import (
 	"context"
 	"sync"
 
-	sdkModels "github.com/edgexfoundry/device-sdk-go/v2/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
+	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces"
 	"github.com/gopcua/opcua"
 )
 
@@ -26,21 +25,19 @@ type Client struct {
 }
 
 type Server struct {
-	deviceName   string
-	resourceMap  map[uint32]string
-	context      *CancelContext
-	client       *Client
-	logger       logger.LoggingClient
-	asyncChannel chan<- *sdkModels.AsyncValues
-	mu           sync.Mutex
+	deviceName  string
+	resourceMap map[uint32]string
+	context     *CancelContext
+	client      *Client
+	sdk         interfaces.DeviceServiceSDK
+	mu          sync.Mutex
 }
 
-func NewServer(deviceName string, lc logger.LoggingClient, ch chan<- *sdkModels.AsyncValues) *Server {
+func NewServer(deviceName string, sdk interfaces.DeviceServiceSDK) *Server {
 	server := &Server{
-		deviceName:   deviceName,
-		resourceMap:  make(map[uint32]string),
-		logger:       lc,
-		asyncChannel: ch,
+		deviceName:  deviceName,
+		resourceMap: make(map[uint32]string),
+		sdk:         sdk,
 	}
 	server.newContext()
 	return server
