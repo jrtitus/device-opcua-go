@@ -53,7 +53,7 @@ func (s *Server) makeReadRequest(req sdkModel.CommandRequest) (*sdkModel.Command
 		},
 		TimestampsToReturn: ua.TimestampsToReturnBoth,
 	}
-	resp, err := s.client.Read(request)
+	resp, err := s.client.Read(s.client.ctx, request)
 	if err != nil {
 		return nil, fmt.Errorf("Driver.handleReadCommands: Read failed: %s", err)
 	}
