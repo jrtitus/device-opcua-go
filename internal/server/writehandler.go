@@ -59,7 +59,7 @@ func (s *Server) handleWriteCommandRequest(req sdkModel.CommandRequest,
 		},
 	}
 
-	resp, err := s.client.Write(request)
+	resp, err := s.client.Write(s.client.ctx, request)
 	if err != nil {
 		s.sdk.LoggingClient().Errorf("Driver.handleWriteCommands: Write value %v failed: %s", v, err)
 		return err

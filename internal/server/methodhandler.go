@@ -51,7 +51,7 @@ func (s *Server) makeMethodCall(resource models.DeviceResource, parameters []str
 		InputArguments: inputs,
 	}
 
-	resp, err := s.client.Call(request)
+	resp, err := s.client.Call(s.client.ctx, request)
 	if err != nil {
 		return nil, fmt.Errorf("Server.makeMethodCall: Method call failed: %s", err)
 	}

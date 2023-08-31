@@ -40,11 +40,11 @@ func (s *Server) StartSubscriptionListener() error {
 		s.sdk.LoggingClient().Warnf("[%s] failed to connect OPCUA client: %v", s.deviceName, err)
 		return err
 	}
-	defer s.client.Close()
+	defer s.client.Close(s.client.ctx)
 
 	notifyCh := make(chan *opcua.PublishNotificationData)
 
-	sub, err := s.client.Subscribe(
+	sub, err := s.client.Subscribe(s.client.ctx,
 		&opcua.SubscriptionParameters{
 			Interval: time.Duration(500) * time.Millisecond,
 		}, notifyCh)
@@ -129,7 +129,7 @@ func (s *Server) configureMonitoredItems(sub *opcua.Subscription, resources []st
 		// map the client handle so we know what the value returned represents
 		s.resourceMap[handle] = resource
 		miCreateRequest := opcua.NewMonitoredItemCreateRequestWithDefaults(id, ua.AttributeIDValue, handle)
-		res, err := sub.Monitor(ua.TimestampsToReturnBoth, miCreateRequest)
+		res, err := sub.Monitor(s.client.ctx, ua.TimestampsToReturnBoth, miCreateRequest)
 		if err != nil || res.Results[0].StatusCode != ua.StatusOK {
 			return err
 		}
