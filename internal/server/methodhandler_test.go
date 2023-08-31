@@ -100,7 +100,7 @@ func TestDriver_ProcessMethodCall(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// create device client and open connection
 			endpoint := test.Protocol + test.Address
-			client := opcua.NewClient(endpoint, opcua.SecurityMode(ua.MessageSecurityModeNone))
+			client, _ := opcua.NewClient(endpoint, opcua.SecurityMode(ua.MessageSecurityModeNone))
 			ctx := context.Background()
 			defer client.Close(ctx)
 			if err := client.Connect(ctx); err != nil {
