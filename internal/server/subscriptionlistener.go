@@ -100,8 +100,13 @@ func (s *Server) initClient(config *Config) error {
 		opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous),
 	}
 
+	uaClient, err := opcua.NewClient(ep.EndpointURL, opts...)
+	if err != nil {
+		return err
+	}
+
 	s.client = &Client{
-		opcua.NewClient(ep.EndpointURL, opts...),
+		uaClient,
 		context.Background(),
 	}
 
