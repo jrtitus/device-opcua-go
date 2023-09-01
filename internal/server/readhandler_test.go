@@ -127,7 +127,10 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// create device client and open connection
 			endpoint := cast.ToString(tt.args.protocols[Protocol][Endpoint])
-			client, _ := opcua.NewClient(endpoint, opcua.SecurityMode(ua.MessageSecurityModeNone))
+			client, err := opcua.NewClient(endpoint, opcua.SecurityMode(ua.MessageSecurityModeNone))
+			if err != nil {
+				t.Fatalf("unable to create opcua client %v", err)
+			}
 			ctx := context.Background()
 			defer client.Close(ctx)
 			if err := client.Connect(ctx); err != nil {
