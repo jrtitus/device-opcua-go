@@ -12,3 +12,16 @@ deviceList:
         CertFile: ""
         KeyFile: ""
         Resources: [Counter, Random]
+  - name: PyServer
+    profileName: Py-Server
+    description: OPCUA device is created for test purpose
+    labels:
+      - test
+    protocols:
+      opcua:
+        Endpoint: "opc.tcp://127.0.0.1:48408/"
+        Policy: None
+        Mode: None
+        CertFile: ""
+        KeyFile: ""
+        Resources: [RWBool, RWInt32]

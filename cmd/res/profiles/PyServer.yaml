@@ -1,0 +1,56 @@
+name: Py-Server
+manufacturer: gopcua
+model: python3
+labels:
+  - OPCUA
+  - test
+description: OPC UA test server nodes
+deviceResources:
+  - name: ROBool
+    description: read-only boolean value
+    properties:
+      valueType: Bool
+      readWrite: R
+    attributes: { nodeId: "ns=2;s=ro_bool" }
+  - name: RWBool
+    description: read-write boolean value
+    properties:
+      valueType: Bool
+      readWrite: RW
+      defaultValue: "false"
+    attributes: { nodeId: "ns=2;s=rw_bool" }
+  - name: ROInt32
+    description: read-only int32 value
+    properties:
+      valueType: Int32
+      readWrite: R
+    attributes: { nodeId: "ns=2;s=ro_int32" }
+  - name: RWInt32
+    description: read-write boolean value
+    properties:
+      valueType: Int32
+      readWrite: RW
+      defaultValue: "0"
+      minValue: 0
+      maxValue: 100
+    attributes: { nodeId: "ns=2;s=rw_int32" }
+  - name: SquareMethod
+    description: Square a number
+    properties:
+      valueType: String
+      readWrite: R
+    attributes: { methodId: "ns=2;s=square", objectID: "ns=2;s=main" }
+
+deviceCommands:
+  - name: ReadOnly
+    isHidden: false
+    readWrite: R
+    resourceOperations:
+      - { deviceResource: ROBool, defaultValue: "false" }
+      - { deviceResource: ROInt32, defaultValue: "0" }
+  - name: ReadWrite
+    isHidden: false
+    readWrite: RW
+    resourceOperations:
+      - { deviceResource: RWBool, defaultValue: "false" }
+      - { deviceResource: RWInt32, defaultValue: "0" }
