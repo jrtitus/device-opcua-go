@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-FROM golang:1.20-alpine3.18 AS builder
+FROM golang:1.21-alpine3.18 AS builder
 WORKDIR /device-opcua-go
 
 # Install our build time packages.
@@ -20,7 +20,7 @@ ADD pkg pkg
 COPY version.go Makefile ./
 
 ARG ADD_BUILD_TAGS=""
-RUN make -e ADD_BUILD_TAGS=$ADD_BUILD_TAGS build
+RUN make -e ADD_BUILD_TAGS="$ADD_BUILD_TAGS" build
 
 # Next image - Copy built Go binary into new workspace
 FROM alpine:3.18

@@ -196,7 +196,7 @@ func TestDriver_Initialize(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d, dsMock := newMockDriver(t)
-			dsMock.On("AddRoute", "/api/v3/call", mock.AnythingOfType("func(http.ResponseWriter, *http.Request)"), http.MethodPost).Return(tt.err)
+			dsMock.On("AddCustomRoute", "/api/v3/call", mock.Anything, mock.AnythingOfType("func(echo.Context) error"), http.MethodPost).Return(tt.err)
 			if tt.err == nil {
 				dsMock.On("Devices").Return(tt.devices)
 			}

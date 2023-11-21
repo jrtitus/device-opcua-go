@@ -84,17 +84,152 @@ A REST endpoint is available at `POST /api/v3/call` to handle method calls. The 
 
 Both `device` and `method` properties are required, and `parameters` is optional.
 
-## Build and Run
+## Build and Run Binary
 
 ```bash
 make build
 EDGEX_SECURITY_SECRET_STORE=false make run
 ```
 
-## Build a Container Image
+## Build and Run a Container Image
 
 ```bash
 make docker
+```
+
+### Running with EdgeX Foundry in No-security Mode
+
+Update [docker-compose-no-secty.yml](https://github.com/edgexfoundry/edgex-compose/blob/v3.1/docker-compose-no-secty.yml) with the following service configuration:
+
+```yml
+services:
+  device-opcua:
+    container_name: edgex-device-opcua
+    depends_on:
+      consul:
+        condition: service_started
+      core-data:
+        condition: service_started
+      core-metadata:
+        condition: service_started
+    environment:
+      EDGEX_SECURITY_SECRET_STORE: "false"
+      SERVICE_HOST: edgex-device-opcua
+    hostname: edgex-device-opcua
+    # Update image ref if necessary
+    image: edgexfoundry/device-opcua-go:0.0.0-dev 
+    networks:
+      edgex-network: null
+    ports:
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 59997
+        published: "59997"
+        protocol: tcp
+    read_only: true
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    user: 2002:2001
+    volumes:
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+        bind:
+          create_host_path: true
+```
+
+### Running with EdgeX Foundry in Secure Mode
+
+Update [docker-compose.yml](https://github.com/edgexfoundry/edgex-compose/blob/v3.1/docker-compose.yml) with the following configuration changes:
+
+```yml
+services:
+  # Update custom proxy route - New for EdgeX Foundry v3.1
+  security-proxy-setup:
+    environment:
+      EDGEX_ADD_PROXY_ROUTE: device-opcua.http://edgex-device-opcua:59997
+  # Update known secrets and secretstore tokens
+  security-secretstore-setup:
+    environment:
+      EDGEX_ADD_KNOWN_SECRETS: redisdb[device-opcua],message-bus[device-opcua]
+      EDGEX_ADD_SECRETSTORE_TOKENS: "device-opcua"
+  # Update custom Consul ACL roles
+  consul:
+    environment:
+      EDGEX_ADD_REGISTRY_ACL_ROLES: "device-opcua"
+  # Device service configuration
+  device-opcua:
+    command:
+      - /device-opcua
+      - -cp=consul.http://edgex-core-consul:8500
+      - --registry
+    container_name: edgex-device-opcua
+    depends_on:
+      consul:
+        condition: service_started
+      core-data:
+        condition: service_started
+      core-metadata:
+        condition: service_started
+      security-bootstrapper:
+        condition: service_started
+    entrypoint:
+      - /edgex-init/ready_to_run_wait_install.sh
+    environment:
+      EDGEX_SECURITY_SECRET_STORE: "true"
+      PROXY_SETUP_HOST: edgex-security-proxy-setup
+      SECRETSTORE_HOST: edgex-vault
+      SERVICE_HOST: edgex-device-opcua
+      STAGEGATE_BOOTSTRAPPER_HOST: edgex-security-bootstrapper
+      STAGEGATE_BOOTSTRAPPER_STARTPORT: "54321"
+      STAGEGATE_DATABASE_HOST: edgex-redis
+      STAGEGATE_DATABASE_PORT: "6379"
+      STAGEGATE_DATABASE_READYPORT: "6379"
+      STAGEGATE_PROXYSETUP_READYPORT: "54325"
+      STAGEGATE_READY_TORUNPORT: "54329"
+      STAGEGATE_REGISTRY_HOST: edgex-core-consul
+      STAGEGATE_REGISTRY_PORT: "8500"
+      STAGEGATE_REGISTRY_READYPORT: "54324"
+      STAGEGATE_SECRETSTORESETUP_HOST: edgex-security-secretstore-setup
+      STAGEGATE_SECRETSTORESETUP_TOKENS_READYPORT: "54322"
+      STAGEGATE_WAITFOR_TIMEOUT: 60s
+    hostname: edgex-device-opcua
+    # Update image ref if necessary
+    image: edgexfoundry/device-opcua-go:0.0.0-dev
+    networks:
+      edgex-network: null
+    ports:
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 59997
+        published: "59997"
+        protocol: tcp
+    read_only: true
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    user: 2002:2001
+    volumes:
+      - type: volume
+        source: edgex-init
+        target: /edgex-init
+        read_only: true
+        volume: {}
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: bind
+        source: /tmp/edgex/secrets/device-opcua
+        target: /tmp/edgex/secrets/device-opcua
+        read_only: true
+        bind:
+          selinux: z
+          create_host_path: true
 ```
 
 ## Build with NATS Messaging

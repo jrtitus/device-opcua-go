@@ -31,7 +31,7 @@ unittest:
 	go test ./... -coverprofile=coverage.out ./...
 
 install-lint:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.52.2
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.55.2
 
 lint:
 	@if [ -f $(GOBIN)/golangci-lint ] ; then $(GOBIN)/golangci-lint run --config .golangci.yml ; else echo "WARNING: go linter not installed. To install, run make install-lint"; fi

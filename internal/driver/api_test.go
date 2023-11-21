@@ -15,6 +15,7 @@ import (
 	"github.com/edgexfoundry/device-opcua-go/internal/server"
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
+	"github.com/labstack/echo/v4"
 )
 
 func TestMethodRequest_validate(t *testing.T) {
@@ -68,22 +69,27 @@ func Test_handleMethodCall(t *testing.T) {
 		deviceName string
 		methodName string
 		resource   models.DeviceResource
+		wantErr    bool
 	}{
 		{
-			name: "NOK - no body",
-			args: args{w: new(test.ResponseWriterMock), body: nil},
+			name:    "NOK - no body",
+			args:    args{w: new(test.ResponseWriterMock), body: nil},
+			wantErr: true,
 		},
 		{
-			name: "NOK - invalid body",
-			args: args{w: new(test.ResponseWriterMock), body: bytes.NewBufferString("")},
+			name:    "NOK - invalid body",
+			args:    args{w: new(test.ResponseWriterMock), body: bytes.NewBufferString("")},
+			wantErr: true,
 		},
 		{
-			name: "NOK - invalid request",
-			args: args{w: new(test.ResponseWriterMock), body: bytes.NewBufferString("{}")},
+			name:    "NOK - invalid request",
+			args:    args{w: new(test.ResponseWriterMock), body: bytes.NewBufferString("{}")},
+			wantErr: true,
 		},
 		{
-			name: "NOK - device not found",
-			args: args{w: new(test.ResponseWriterMock), body: bytes.NewBufferString(`{"device":"test","method":"test"}`)},
+			name:    "NOK - device not found",
+			args:    args{w: new(test.ResponseWriterMock), body: bytes.NewBufferString(`{"device":"test","method":"test"}`)},
+			wantErr: true,
 		},
 		{
 			name:       "NOK - hidden resource",
@@ -91,6 +97,7 @@ func Test_handleMethodCall(t *testing.T) {
 			deviceName: "test",
 			methodName: "test",
 			resource:   models.DeviceResource{Name: "test", IsHidden: true},
+			wantErr:    true,
 		},
 	}
 	for _, tt := range tests {
@@ -102,7 +109,12 @@ func Test_handleMethodCall(t *testing.T) {
 				dsMock.On("DeviceResource", tt.deviceName, tt.methodName).Return(tt.resource, true)
 			}
 			request, _ := http.NewRequest(http.MethodPost, "", tt.args.body)
-			handleMethodCall(tt.args.w, request)
+			c := echo.New().NewContext(request, tt.args.w)
+			err := handleMethodCall(c)
+			if err != nil && !tt.wantErr {
+				t.Errorf("wanted no error, received: %v", err)
+			}
+
 		})
 	}
 }
