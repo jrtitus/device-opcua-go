@@ -9,7 +9,7 @@ require (
 	github.com/edgexfoundry/go-mod-core-contracts/v3 v3.1.0
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/gopcua/opcua v0.5.2
-	github.com/labstack/echo/v4 v4.11.2
+	github.com/labstack/echo/v4 v4.11.3
 	github.com/spf13/cast v1.5.1
 	github.com/stretchr/testify v1.8.4
 )
