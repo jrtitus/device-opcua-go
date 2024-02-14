@@ -15,6 +15,7 @@ import (
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/result"
 	sdkModels "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )
@@ -25,6 +26,11 @@ func (s *Server) StartSubscriptionListener() error {
 	device, err := s.sdk.GetDeviceByName(s.deviceName)
 	if err != nil {
 		return err
+	}
+
+	if device.AdminState == models.Locked || device.OperatingState == models.Down {
+		s.sdk.LoggingClient().Warnf("subscription listener not started for [%s]: device is locked or down", s.deviceName)
+		return nil
 	}
 
 	serverConfig, err := NewConfig(device.Protocols["opcua"])
