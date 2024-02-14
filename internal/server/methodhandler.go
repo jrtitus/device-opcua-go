@@ -14,6 +14,15 @@ import (
 )
 
 func (s *Server) ProcessMethodCall(method string, parameters []string) (interface{}, error) {
+	device, err := s.sdk.GetDeviceByName(s.deviceName)
+	if err != nil {
+		return nil, fmt.Errorf("device not found: %v", err)
+	}
+
+	if device.AdminState == models.Locked || device.OperatingState == models.Down {
+		return nil, fmt.Errorf("method [%s] not processed for [%s]: device is locked or down", method, s.deviceName)
+	}
+
 	resource, ok := s.sdk.DeviceResource(s.deviceName, method)
 	if !ok {
 		return nil, fmt.Errorf("method not found")
