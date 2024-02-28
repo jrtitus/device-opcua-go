@@ -16,7 +16,7 @@ import (
 // Config struct details for OPCUA device list protocol properties
 type Config struct {
 	Endpoint  string   `json:"Endpoint" validate:"required"`
-	Policy    string   `json:"Policy" validate:"oneof=None Basic128Rsa15 Basic256 Basic256Sha256"`
+	Policy    string   `json:"Policy" validate:"oneof=None Basic128Rsa15 Basic256 Basic256Sha256 Aes128Sha256RsaOaep Aes256Sha256RsaPss"`
 	Mode      string   `json:"Mode" validate:"oneof=None Sign SignAndEncrypt"`
 	CertFile  string   `json:"CertFile" validate:"required_unless=Policy None Mode None"`
 	KeyFile   string   `json:"KeyFile" validate:"required_unless=Policy None Mode None"`

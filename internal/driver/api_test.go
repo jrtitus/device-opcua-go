@@ -105,7 +105,7 @@ func Test_handleMethodCall(t *testing.T) {
 			d, dsMock := newMockDriver(t)
 			if tt.deviceName != "" {
 				d.serverMap[tt.deviceName] = server.NewServer(tt.deviceName, dsMock)
-
+				dsMock.On("GetDeviceByName", tt.deviceName).Return(models.Device{Name: tt.deviceName}, nil)
 				dsMock.On("DeviceResource", tt.deviceName, tt.methodName).Return(tt.resource, true)
 			}
 			request, _ := http.NewRequest(http.MethodPost, "", tt.args.body)
