@@ -38,7 +38,7 @@ deviceList:
     protocols:
       opcua:
         Endpoint: "opc.tcp://127.0.0.1:53530/OPCUA/SimulationServer"
-        # Security policy: None Basic128Rsa15 Basic256 Basic256Sha256 Aes128Sha256RsaOaep Aes256Sha256RsaPss. Default: None
+        # Security policy: None, Basic128Rsa15, Basic256, Basic256Sha256, Aes128Sha256RsaOaep, Aes256Sha256RsaPss. Default: None
         Policy: None
         # Security mode: None, Sign, SignAndEncrypt. Default: None
         Mode: None
