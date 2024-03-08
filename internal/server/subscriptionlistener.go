@@ -156,7 +156,14 @@ func (s *Server) handleDataChange(dcn *ua.DataChangeNotification) {
 	defer s.mu.Unlock()
 
 	for _, item := range dcn.MonitoredItems {
-		data := item.Value.Value.Value()
+		var data any
+
+		variant := item.Value.Value
+		if variant != nil {
+			data = variant.Value()
+		} else {
+			continue
+		}
 		resourceName := s.resourceMap[item.ClientHandle]
 		if err := s.onIncomingDataReceived(data, resourceName); err != nil {
 			s.sdk.LoggingClient().Errorf("%v", err)

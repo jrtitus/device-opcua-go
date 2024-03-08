@@ -61,6 +61,10 @@ func (s *Server) makeReadRequest(req sdkModel.CommandRequest) (*sdkModel.Command
 		return nil, fmt.Errorf("Driver.handleReadCommands: Status not OK: %v", resp.Results[0].Status)
 	}
 
-	reading := resp.Results[0].Value.Value()
-	return result.NewResult(req, reading)
+	variant := resp.Results[0].Value
+	if variant == nil {
+		return nil, fmt.Errorf("Driver.handleReadCommands: Variant value is nil")
+	}
+
+	return result.NewResult(req, variant.Value())
 }
