@@ -155,9 +155,9 @@ func (s *Server) handleDataChange(dcn *ua.DataChangeNotification) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var data any
-
 	for _, item := range dcn.MonitoredItems {
+		var data any
+
 		variant := item.Value.Value
 		if variant != nil {
 			data = variant.Value()
