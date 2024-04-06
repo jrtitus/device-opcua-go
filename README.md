@@ -1,6 +1,7 @@
 # OPC-UA Device Service
 
-> NOTE: This service is designed for EdgeX Foundry v3.0
+> [!NOTE]
+> This service is designed for EdgeX Foundry v3.1
 
 ## Overview
 
