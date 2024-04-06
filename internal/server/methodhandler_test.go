@@ -37,6 +37,7 @@ func TestDriver_ProcessMethodCall(t *testing.T) {
 		deviceErr error
 		want      interface{}
 		wantErr   bool
+		nilClient bool
 	}{
 		{
 			name:      "NOK - device not found",
@@ -110,6 +111,22 @@ func TestDriver_ProcessMethodCall(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "NOK - client is nil",
+			args: args{
+				resource: models.DeviceResource{
+					Name: "TestResource1",
+					Attributes: map[string]interface{}{
+						METHOD: "ns=2;s=square",
+						OBJECT: "ns=2;s=main",
+					},
+				},
+				parameters: []string{"2"},
+				device:     okDevice,
+			},
+			nilClient: true,
+			wantErr:   true,
+		},
+		{
 			name: "OK - call method from mock server",
 			args: args{
 				resource: models.DeviceResource{
@@ -148,10 +165,15 @@ func TestDriver_ProcessMethodCall(t *testing.T) {
 
 			dsMock := test.NewDSMock(t)
 			s := NewServer("test", dsMock)
-			s.client = &Client{client, context.Background()}
-			dsMock.On("GetDeviceByName", mock.Anything).Return(tt.args.device, tt.deviceErr)
+			dsMock.On("GetDeviceByName", mock.Anything).Return(tt.args.device, tt.deviceErr).Times(1)
 			if tt.deviceErr == nil && tt.args.device.AdminState != models.Locked && tt.args.device.OperatingState != models.Down {
 				dsMock.On("DeviceResource", mock.Anything, tt.args.method).Return(tt.args.resource, tt.args.resource.Name != "")
+			}
+			if tt.nilClient {
+				s.client = nil
+				dsMock.On("GetDeviceByName", mock.Anything).Return(models.Device{}, fmt.Errorf("error")).Times(1)
+			} else {
+				s.client = &Client{client, context.Background()}
 			}
 			got, err := s.ProcessMethodCall(tt.args.method, tt.args.parameters)
 			if (err != nil) != tt.wantErr {

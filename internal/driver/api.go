@@ -33,22 +33,15 @@ func (r *MethodRequest) validate() error {
 	return validate.Struct(r)
 }
 
-func writeResponse(w http.ResponseWriter, id, message string, status int) {
-	response := common.NewBaseResponse(id, message, status)
-	bytes, _ := json.Marshal(response)
-	_, _ = w.Write(bytes) // nolint:errcheck
-}
-
 func handleMethodCall(e echo.Context) error {
 	w := e.Response()
 	r := e.Request()
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
 	id := r.Header.Get("X-Correlation-ID")
 
 	if r.Body == nil {
-		writeResponse(w, id, "request body required", http.StatusBadRequest)
-		return echo.ErrBadRequest
+		return echo.NewHTTPError(http.StatusBadRequest, "request body required")
 	}
 	defer r.Body.Close()
 
@@ -56,32 +49,28 @@ func handleMethodCall(e echo.Context) error {
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		driver.sdk.LoggingClient().Errorf("invalid request: %v", err)
-		writeResponse(w, id, "invalid request", http.StatusBadRequest)
-		return echo.ErrBadRequest
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request")
 	}
 
 	if err := req.validate(); err != nil {
 		msg := fmt.Sprintf("invalid request: %v", err)
 		driver.sdk.LoggingClient().Error(msg)
-		writeResponse(w, id, msg, http.StatusBadRequest)
-		return echo.ErrBadRequest
+		return echo.NewHTTPError(http.StatusBadRequest, msg)
 	}
 
 	// get device from server map
 	server, ok := driver.serverMap[req.DeviceName]
 	if !ok {
-		writeResponse(w, id, "error interacting with device", http.StatusInternalServerError)
-		return echo.ErrInternalServerError
+		return echo.NewHTTPError(http.StatusInternalServerError, "error interacting with device")
 	}
 
 	// call to method with parameters - see methodhandler
 	response, err := server.ProcessMethodCall(req.MethodName, req.Parameters)
 	if err != nil {
 		driver.sdk.LoggingClient().Errorf(err.Error())
-		writeResponse(w, id, "error interacting with device", http.StatusInternalServerError)
-		return echo.ErrInternalServerError
+		return echo.NewHTTPError(http.StatusInternalServerError, "error interacting with device")
 	}
 
-	writeResponse(w, id, cast.ToString(response), http.StatusOK)
-	return nil
+	baseResponse := common.NewBaseResponse(id, cast.ToString(response), http.StatusOK)
+	return e.JSON(http.StatusOK, baseResponse)
 }

@@ -36,7 +36,8 @@ func Test_configureMonitoredItems(t *testing.T) {
 		dsMock.On("DeviceResource", "Test", "c").Return(models.DeviceResource{}, false)
 
 		s := NewServer("Test", dsMock)
-		err := s.configureMonitoredItems(nil, []string{"a", "b", "c"})
+		s.config = &Config{Resources: []string{"a", "b", "c"}}
+		err := s.configureMonitoredItems(nil)
 		if err != nil {
 			t.Errorf("expected no error, got = %v", err)
 		}
@@ -91,7 +92,8 @@ func TestDriver_initClient(t *testing.T) {
 				defer server.Close()
 			}
 
-			err := s.initClient(tt.config)
+			s.config = tt.config
+			err := s.initClient()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Driver.getClient() error = %v, wantErr %v", err, tt.wantErr)
 				return
