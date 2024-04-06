@@ -89,12 +89,16 @@ func (d *Driver) UpdateDevice(deviceName string, protocols map[string]models.Pro
 // RemoveDevice is a callback function that is invoked
 // when a Device associated with this Device Service is removed
 func (d *Driver) RemoveDevice(deviceName string, protocols map[string]models.ProtocolProperties) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	d.sdk.LoggingClient().Debugf("Device %s is removed. Cleaning up...", deviceName)
 	if s, ok := d.serverMap[deviceName]; ok {
 		s.Cleanup(false)
 		d.serverMap[deviceName] = nil
 		return nil
 	}
+
 	return serverNotFoundError(deviceName)
 }
 
@@ -121,9 +125,9 @@ func (d *Driver) Start() error {
 // readings (if supported).
 func (d *Driver) Stop(force bool) error {
 	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.serverMap = nil
 	d.sdk = nil
-	d.mu.Unlock()
 	return nil
 }
 

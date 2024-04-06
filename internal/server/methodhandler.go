@@ -60,6 +60,12 @@ func (s *Server) makeMethodCall(resource models.DeviceResource, parameters []str
 		InputArguments: inputs,
 	}
 
+	if s.client == nil {
+		if err := s.Connect(); err != nil {
+			return nil, fmt.Errorf("Server.makeMethodCall: client not initialized: %s", err)
+		}
+	}
+
 	resp, err := s.client.Call(s.client.ctx, request)
 	if err != nil {
 		return nil, fmt.Errorf("Server.makeMethodCall: Method call failed: %s", err)

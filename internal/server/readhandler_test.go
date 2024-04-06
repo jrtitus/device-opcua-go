@@ -8,6 +8,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -37,6 +38,7 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 		want        []*sdkModel.CommandValue
 		wantErr     bool
 		endpointErr bool
+		nilClient   bool
 	}{
 		{
 			name: "NOK - no endpoint defined",
@@ -98,6 +100,23 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "NOK - client is nil",
+			args: args{
+				deviceName: "Test",
+				protocols: map[string]models.ProtocolProperties{
+					Protocol: {Endpoint: test.Protocol + test.Address},
+				},
+				reqs: []sdkModel.CommandRequest{{
+					DeviceResourceName: "TestVar1",
+					Attributes:         map[string]interface{}{NODE: "ns=2;s=ro_int32"},
+					Type:               common.ValueTypeInt32,
+				}},
+			},
+			want:      make([]*sdkModel.CommandValue, 1),
+			nilClient: true,
+			wantErr:   true,
+		},
+		{
 			name: "OK - read value from mock server",
 			args: args{
 				deviceName: "Test",
@@ -142,7 +161,12 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 
 			dsMock := test.NewDSMock(t)
 			s := NewServer(tt.args.deviceName, dsMock)
-			s.client = &Client{client, context.Background()}
+			if tt.nilClient {
+				s.client = nil
+				dsMock.On("GetDeviceByName", tt.args.deviceName).Return(models.Device{}, fmt.Errorf("error"))
+			} else {
+				s.client = &Client{client, context.Background()}
+			}
 			got, err := s.ProcessReadCommands(tt.args.reqs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Driver.HandleReadCommands() error = %v, wantErr %v", err, tt.wantErr)

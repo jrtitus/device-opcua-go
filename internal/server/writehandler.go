@@ -59,6 +59,12 @@ func (s *Server) handleWriteCommandRequest(req sdkModel.CommandRequest,
 		},
 	}
 
+	if s.client == nil {
+		if err := s.Connect(); err != nil {
+			return fmt.Errorf("Driver.handleWriteCommands: client not initialized: %s", err)
+		}
+	}
+
 	resp, err := s.client.Write(s.client.ctx, request)
 	if err != nil {
 		s.sdk.LoggingClient().Errorf("Driver.handleWriteCommands: Write value %v failed: %s", v, err)

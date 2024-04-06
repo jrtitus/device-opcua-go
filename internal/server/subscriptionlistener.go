@@ -9,13 +9,11 @@
 package server
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/result"
 	sdkModels "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )
@@ -23,30 +21,11 @@ import (
 // StartSubscriptionListener initializes a new OPCUA client and subscribes to the resources
 // specified by the user in the device protocol configuration
 func (s *Server) StartSubscriptionListener() error {
-	device, err := s.sdk.GetDeviceByName(s.deviceName)
-	if err != nil {
+	if err := s.Connect(); err != nil {
 		return err
 	}
-
-	if device.AdminState == models.Locked || device.OperatingState == models.Down {
-		s.sdk.LoggingClient().Warnf("subscription listener not started for [%s]: device is locked or down", s.deviceName)
-		return nil
-	}
-
-	serverConfig, err := NewConfig(device.Protocols["opcua"])
-	if err != nil {
-		return err
-	}
-
-	if err := s.initClient(serverConfig); err != nil {
-		return err
-	}
-
-	if err := s.client.Connect(s.client.ctx); err != nil {
-		s.sdk.LoggingClient().Warnf("[%s] failed to connect OPCUA client: %v", s.deviceName, err)
-		return err
-	}
-	defer s.client.Close(s.client.ctx)
+	// Connection will be explicitely closed by s.Cleanup, which is called by the Device Service
+	// when the device is removed or updated. Otherwise it will be closed when the service stops
 
 	notifyCh := make(chan *opcua.PublishNotificationData)
 
@@ -59,7 +38,7 @@ func (s *Server) StartSubscriptionListener() error {
 	}
 	defer sub.Cancel(s.client.ctx) //nolint:errcheck
 
-	if err := s.configureMonitoredItems(sub, serverConfig.Resources); err != nil {
+	if err := s.configureMonitoredItems(sub); err != nil {
 		return err
 	}
 
@@ -84,46 +63,11 @@ func (s *Server) StartSubscriptionListener() error {
 	}
 }
 
-func (s *Server) initClient(config *Config) error {
-
-	endpoints, err := opcua.GetEndpoints(s.context.ctx, config.Endpoint)
-	if err != nil {
-		return err
-	}
-
-	ep := opcua.SelectEndpoint(endpoints, config.Policy, ua.MessageSecurityModeFromString(config.Mode))
-	if ep == nil {
-		return fmt.Errorf("[%s] failed to find suitable endpoint", s.deviceName)
-	}
-	ep.EndpointURL = config.Endpoint
-
-	opts := []opcua.Option{
-		opcua.SecurityPolicy(config.Policy),
-		opcua.SecurityModeString(config.Mode),
-		opcua.CertificateFile(config.CertFile),
-		opcua.PrivateKeyFile(config.KeyFile),
-		opcua.AuthAnonymous(),
-		opcua.SecurityFromEndpoint(ep, ua.UserTokenTypeAnonymous),
-	}
-
-	uaClient, err := opcua.NewClient(ep.EndpointURL, opts...)
-	if err != nil {
-		return err
-	}
-
-	s.client = &Client{
-		uaClient,
-		context.Background(),
-	}
-
-	return nil
-}
-
-func (s *Server) configureMonitoredItems(sub *opcua.Subscription, resources []string) error {
+func (s *Server) configureMonitoredItems(sub *opcua.Subscription) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for i, resource := range resources {
+	for i, resource := range s.config.Resources {
 		deviceResource, ok := s.sdk.DeviceResource(s.deviceName, resource)
 		if !ok {
 			s.sdk.LoggingClient().Warnf("[%s] unable to find resource with name %s", s.deviceName, resource)

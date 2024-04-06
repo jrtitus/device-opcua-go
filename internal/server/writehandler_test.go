@@ -8,6 +8,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
@@ -31,6 +32,7 @@ func TestDriver_ProcessWriteCommands(t *testing.T) {
 		args        args
 		wantErr     bool
 		endpointErr bool
+		nilClient   bool
 	}{
 		{
 			name: "NOK - no endpoint defined",
@@ -79,6 +81,25 @@ func TestDriver_ProcessWriteCommands(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "NOK - client is nil",
+			args: args{
+				deviceName: "Test",
+				protocols:  map[string]models.ProtocolProperties{Protocol: {Endpoint: test.Protocol + test.Address}},
+				reqs: []sdkModel.CommandRequest{{
+					DeviceResourceName: "TestResource1",
+					Attributes:         map[string]interface{}{NODE: "ns=2;s=rw_int32"},
+					Type:               common.ValueTypeInt32,
+				}},
+				params: []*sdkModel.CommandValue{{
+					DeviceResourceName: "TestResource1",
+					Type:               common.ValueTypeInt32,
+					Value:              int32(42),
+				}},
+			},
+			nilClient: true,
+			wantErr:   true,
+		},
+		{
 			name: "OK - command request with one parameter",
 			args: args{
 				deviceName: "Test",
@@ -121,7 +142,12 @@ func TestDriver_ProcessWriteCommands(t *testing.T) {
 
 			dsMock := test.NewDSMock(t)
 			s := NewServer(tt.args.deviceName, dsMock)
-			s.client = &Client{client, context.Background()}
+			if tt.nilClient {
+				s.client = nil
+				dsMock.On("GetDeviceByName", tt.args.deviceName).Return(models.Device{}, fmt.Errorf("error"))
+			} else {
+				s.client = &Client{client, context.Background()}
+			}
 			if err := s.ProcessWriteCommands(tt.args.reqs, tt.args.params); (err != nil) != tt.wantErr {
 				t.Errorf("Driver.HandleWriteCommands() error = %v, wantErr %v", err, tt.wantErr)
 			}
