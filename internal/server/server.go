@@ -78,6 +78,9 @@ func (s *Server) Connect() error {
 }
 
 func (s *Server) Cleanup(recreateContext bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.client != nil {
 		// Connection could have been opened from
 		// subscriptionlistener, readhandler, writehandler, or methodhandler
