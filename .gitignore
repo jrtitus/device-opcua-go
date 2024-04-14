@@ -6,3 +6,4 @@ vendor
 .idea
 VERSION
 coverage.out
+test-results.*
