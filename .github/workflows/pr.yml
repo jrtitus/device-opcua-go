@@ -16,12 +16,12 @@ jobs:
       - name: Build the image
         uses: docker/build-push-action@v5
         with:
-          tags: SE-I-T-Digital/device-opcua:${{ github.sha }}
+          tags: device-opcua:${{ github.sha }}
           load: true
       - name: Scan with Trivy
         uses: aquasecurity/trivy-action@0.19.0
         with:
-          image-ref: SE-I-T-Digital/device-opcua:${{ github.sha }}
+          image-ref: device-opcua:${{ github.sha }}
           format: table
           exit-code: 1
           ignore-unfixed: true
@@ -55,7 +55,7 @@ jobs:
           python-version: "3.10"
       - name: Install dependencies
         run: |
-          python3 -m pip install opcua
+          python3 -m pip install opcua cryptography
           go install gotest.tools/gotestsum@latest
       - name: Run unit tests
         run: |
