@@ -7,7 +7,7 @@ toolchain go1.21.4
 require (
 	github.com/edgexfoundry/device-sdk-go/v3 v3.1.1
 	github.com/edgexfoundry/go-mod-core-contracts/v3 v3.1.0
-	github.com/go-playground/validator/v10 v10.20.0
+	github.com/go-playground/validator/v10 v10.21.0
 	github.com/gopcua/opcua v0.5.3
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/spf13/cast v1.6.0
