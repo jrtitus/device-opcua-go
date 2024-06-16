@@ -22,3 +22,5 @@ else
         fi
     done < <(cat $GIT_ROOT/go.mod | grep -v 'module ' | grep -v TODO | grep '/' | sed 's/require //' | sed 's/replace //' | awk '{print $1}')
 fi
+
+exit $EXIT_CODE
