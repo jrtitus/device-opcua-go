@@ -23,10 +23,13 @@ ARG ADD_BUILD_TAGS=""
 RUN make -e ADD_BUILD_TAGS="$ADD_BUILD_TAGS" build
 
 # Next image - Copy built Go binary into new workspace
-FROM alpine:3.20
+FROM alpine:3.20.0
 
 # dumb-init needed for injected secure bootstrapping entrypoint script when run in secure mode.
-RUN apk add --update --no-cache dumb-init
+# upgrade required to patch for open CVEs.
+RUN apk add --update --no-cache dumb-init=1.2.5-r3 && \
+apk upgrade busybox libcrypto3 libssl3 && \
+rm -rf /var/cache/apk/*
 
 # expose command data port
 EXPOSE 59997

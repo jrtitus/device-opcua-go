@@ -36,7 +36,7 @@ func (r *MethodRequest) validate() error {
 func handleMethodCall(e echo.Context) error {
 	w := e.Response()
 	r := e.Request()
-	w.Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+	w.Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	id := r.Header.Get("X-Correlation-ID")
 

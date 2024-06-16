@@ -57,12 +57,9 @@ jobs:
       - name: Install dependencies
         run: |
           python3 -m pip install opcua cryptography
-          go install gotest.tools/gotestsum@latest
       - name: Run unit tests
-        id: utest
         run: |
-          go vet ./...
-          $(go env GOPATH)/bin/gotestsum --jsonfile test-results.log -- -coverprofile=coverage.out ./... >> test-results.txt
+          make test >> test-results.txt
       - name: Publish results to summary
         if: always()
         run: |
@@ -75,9 +72,3 @@ jobs:
               echo '```'
             } >> $GITHUB_STEP_SUMMARY
           fi
-      - name: Publish verbose results on failure
-        if: steps.utest.conclusion == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: test-results.log
