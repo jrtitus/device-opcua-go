@@ -13,6 +13,7 @@ import (
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/command"
 	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )
 
@@ -59,7 +60,7 @@ func (s *Server) handleWriteCommandRequest(req sdkModel.CommandRequest,
 		},
 	}
 
-	if s.client == nil {
+	if s.client == nil || s.client.State() == opcua.Closed || s.client.State() == opcua.Disconnected {
 		if err := s.Connect(); err != nil {
 			return fmt.Errorf("Driver.handleWriteCommands: client not initialized: %s", err)
 		}

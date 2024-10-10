@@ -100,7 +100,7 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "NOK - client is nil",
+			name: "OK - client is nil, but reconnect successful",
 			args: args{
 				deviceName: "Test",
 				protocols: map[string]models.ProtocolProperties{
@@ -112,9 +112,13 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 					Type:               common.ValueTypeInt32,
 				}},
 			},
-			want:      make([]*sdkModel.CommandValue, 1),
+			want: []*sdkModel.CommandValue{{
+				DeviceResourceName: "TestVar1",
+				Type:               common.ValueTypeInt32,
+				Value:              int32(5),
+				Tags:               make(map[string]string),
+			}},
 			nilClient: true,
-			wantErr:   true,
 		},
 		{
 			name: "OK - read value from mock server",
@@ -163,10 +167,95 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 			s := NewServer(tt.args.deviceName, dsMock)
 			if tt.nilClient {
 				s.client = nil
-				dsMock.On("GetDeviceByName", tt.args.deviceName).Return(models.Device{}, fmt.Errorf("error"))
+				dsMock.On("GetDeviceByName", tt.args.deviceName).Return(models.Device{Name: tt.args.deviceName, Protocols: tt.args.protocols}, nil)
 			} else {
 				s.client = &Client{client, context.Background()}
 			}
+			got, err := s.ProcessReadCommands(tt.args.reqs)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Driver.HandleReadCommands() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			// Ignore Origin for DeepEqual
+			if len(got) > 0 && got[0] != nil {
+				got[0].Origin = 0
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Driver.HandleReadCommands() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDriver_ProcessReadCommandsNoServer(t *testing.T) {
+	type args struct {
+		deviceName string
+		protocols  map[string]models.ProtocolProperties
+		reqs       []sdkModel.CommandRequest
+	}
+	tests := []struct {
+		name        string
+		args        args
+		want        []*sdkModel.CommandValue
+		wantErr     bool
+		endpointErr bool
+		nilClient   bool
+	}{
+		{
+			name: "NOK - error from nil client",
+			args: args{
+				deviceName: "Test",
+				protocols: map[string]models.ProtocolProperties{
+					Protocol: {Endpoint: test.Protocol + test.Address},
+				},
+				reqs: []sdkModel.CommandRequest{{
+					DeviceResourceName: "TestVar1",
+					Attributes:         map[string]interface{}{NODE: "ns=2;s=ro_int32"},
+					Type:               common.ValueTypeInt32,
+				}},
+			},
+			want:      []*sdkModel.CommandValue{nil},
+			wantErr:   true,
+			nilClient: true,
+		},
+		{
+			name: "NOK - error from disconnected server",
+			args: args{
+				deviceName: "Test",
+				protocols: map[string]models.ProtocolProperties{
+					Protocol: {Endpoint: test.Protocol + test.Address},
+				},
+				reqs: []sdkModel.CommandRequest{{
+					DeviceResourceName: "TestVar1",
+					Attributes:         map[string]interface{}{NODE: "ns=2;s=ro_int32"},
+					Type:               common.ValueTypeInt32,
+				}},
+			},
+			want:    []*sdkModel.CommandValue{nil},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// create device client and open connection
+			endpoint := cast.ToString(tt.args.protocols[Protocol][Endpoint])
+			client, err := opcua.NewClient(endpoint, opcua.SecurityMode(ua.MessageSecurityModeNone))
+			if err != nil {
+				t.Fatalf("unable to create opcua client %v", err)
+			}
+			ctx := context.Background()
+			defer client.Close(ctx)
+
+			dsMock := test.NewDSMock(t)
+			s := NewServer(tt.args.deviceName, dsMock)
+			if tt.nilClient {
+				s.client = nil
+			} else {
+				s.client = &Client{client, context.Background()}
+			}
+			dsMock.On("GetDeviceByName", tt.args.deviceName).Return(models.Device{}, fmt.Errorf("error"))
+
 			got, err := s.ProcessReadCommands(tt.args.reqs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Driver.HandleReadCommands() error = %v, wantErr %v", err, tt.wantErr)

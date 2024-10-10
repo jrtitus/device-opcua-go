@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
+	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )
 
@@ -60,7 +61,7 @@ func (s *Server) makeMethodCall(resource models.DeviceResource, parameters []str
 		InputArguments: inputs,
 	}
 
-	if s.client == nil {
+	if s.client == nil || s.client.State() == opcua.Closed || s.client.State() == opcua.Disconnected {
 		if err := s.Connect(); err != nil {
 			return nil, fmt.Errorf("Server.makeMethodCall: client not initialized: %s", err)
 		}
