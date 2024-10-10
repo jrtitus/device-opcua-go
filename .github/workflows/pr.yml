@@ -19,7 +19,9 @@ jobs:
           tags: device-opcua:${{ github.sha }}
           load: true
       - name: Scan with Trivy
-        uses: aquasecurity/trivy-action@0.19.0
+        uses: aquasecurity/trivy-action@0.26.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
           image-ref: device-opcua:${{ github.sha }}
           format: table
