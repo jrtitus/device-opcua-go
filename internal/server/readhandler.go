@@ -13,6 +13,7 @@ import (
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/result"
 	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )
 
@@ -54,7 +55,7 @@ func (s *Server) makeReadRequest(req sdkModel.CommandRequest) (*sdkModel.Command
 		TimestampsToReturn: ua.TimestampsToReturnBoth,
 	}
 
-	if s.client == nil {
+	if s.client == nil || s.client.State() == opcua.Closed || s.client.State() == opcua.Disconnected {
 		if err := s.Connect(); err != nil {
 			return nil, fmt.Errorf("Driver.handleReadCommands: client not initialized: %s", err)
 		}
