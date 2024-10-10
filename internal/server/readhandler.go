@@ -53,8 +53,7 @@ func buildNodesToReadRequest(reqs []sdkModel.CommandRequest) (nodesToRead []*ua.
 
 	for reqIndex, req := range reqs {
 		if _, isMethod := req.Attributes[METHOD]; isMethod {
-			err := fmt.Errorf("not allowed to call command on method: %s", req.DeviceResourceName)
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("not allowed to call command on method: %s", req.DeviceResourceName)
 		}
 
 		id, err := getNodeID(req.Attributes, NODE)
