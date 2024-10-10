@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-FROM golang:1.21-alpine3.20 AS builder
+FROM golang:1.22-alpine3.20 AS builder
 WORKDIR /device-opcua-go
 
 # Install our build time packages.
@@ -23,7 +23,7 @@ ARG ADD_BUILD_TAGS=""
 RUN make -e ADD_BUILD_TAGS="$ADD_BUILD_TAGS" build
 
 # Next image - Copy built Go binary into new workspace
-FROM alpine:3.20.0
+FROM alpine:3.20.3
 
 # dumb-init needed for injected secure bootstrapping entrypoint script when run in secure mode.
 # upgrade required to patch for open CVEs.
