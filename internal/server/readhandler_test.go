@@ -51,8 +51,9 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 			wantErr:     true,
 			endpointErr: true,
 		},
+		// non-existent resource will have a nil response and be ignored by edgex
 		{
-			name: "NOK - non-existent variable",
+			name: "OK - non-existent variable",
 			args: args{
 				deviceName: "Test",
 				protocols: map[string]models.ProtocolProperties{
@@ -64,8 +65,7 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 					Type:               common.ValueTypeInt32,
 				}},
 			},
-			want:    make([]*sdkModel.CommandValue, 1),
-			wantErr: true,
+			want: make([]*sdkModel.CommandValue, 1),
 		},
 		{
 			name: "NOK - read command - invalid node id",
@@ -141,6 +141,36 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 			}},
 			wantErr: false,
 		},
+		{
+			name: "OK - read many values from mock server",
+			args: args{
+				deviceName: "Test",
+				protocols: map[string]models.ProtocolProperties{
+					Protocol: {Endpoint: test.Protocol + test.Address},
+				},
+				reqs: []sdkModel.CommandRequest{{
+					DeviceResourceName: "TestVar1",
+					Attributes:         map[string]interface{}{NODE: "ns=2;s=ro_int32"},
+					Type:               common.ValueTypeInt32,
+				}, {
+					DeviceResourceName: "TestVar2",
+					Attributes:         map[string]interface{}{NODE: "ns=2;s=ro_bool"},
+					Type:               common.ValueTypeBool,
+				}},
+			},
+			want: []*sdkModel.CommandValue{{
+				DeviceResourceName: "TestVar1",
+				Type:               common.ValueTypeInt32,
+				Value:              int32(5),
+				Tags:               make(map[string]string),
+			}, {
+				DeviceResourceName: "TestVar2",
+				Type:               common.ValueTypeBool,
+				Value:              true,
+				Tags:               make(map[string]string),
+			}},
+			wantErr: false,
+		},
 	}
 
 	server := test.NewServer("../test/opcua_server.py")
@@ -177,9 +207,12 @@ func TestDriver_ProcessReadCommands(t *testing.T) {
 				return
 			}
 			// Ignore Origin for DeepEqual
-			if len(got) > 0 && got[0] != nil {
-				got[0].Origin = 0
+			for i := range got {
+				if got[i] != nil {
+					got[i].Origin = 0
+				}
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Driver.HandleReadCommands() = %v, want %v", got, tt.want)
 			}
@@ -269,5 +302,143 @@ func TestDriver_ProcessReadCommandsNoServer(t *testing.T) {
 				t.Errorf("Driver.HandleReadCommands() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestBuildReadRequest(t *testing.T) {
+	tests := []struct {
+		name                    string
+		reqNodeIds              []string
+		expectedNodeIds         map[string]struct{}
+		expectedResultToRequest ResultToRequest
+	}{
+		{
+			name:                    "OK - Empty Request",
+			reqNodeIds:              []string{},
+			expectedNodeIds:         map[string]struct{}{},
+			expectedResultToRequest: map[int][]int{},
+		}, {
+			name:       "OK - On Read Request",
+			reqNodeIds: []string{"ns=1;i=1"},
+			expectedNodeIds: map[string]struct{}{
+				"ns=1;i=1": {},
+			},
+			expectedResultToRequest: map[int][]int{
+				0: {0},
+			},
+		}, {
+			name: "OK - Multi Read Request",
+			reqNodeIds: []string{
+				"ns=1;i=1",
+				"ns=1;i=2",
+				"ns=1;i=3",
+				"ns=1;i=4",
+				"ns=1;i=5",
+			},
+			expectedNodeIds: map[string]struct{}{
+				"ns=1;i=1": {},
+				"ns=1;i=2": {},
+				"ns=1;i=3": {},
+				"ns=1;i=4": {},
+				"ns=1;i=5": {},
+			},
+			expectedResultToRequest: map[int][]int{
+				0: {0},
+				1: {1},
+				2: {2},
+				3: {3},
+				4: {4},
+			},
+		}, {
+			name: "OK - Two Overlapping Read Requests",
+			reqNodeIds: []string{
+				"ns=1;i=1",
+				"ns=1;i=1",
+			},
+			expectedNodeIds: map[string]struct{}{
+				"ns=1;i=1": {},
+			},
+			expectedResultToRequest: map[int][]int{
+				0: {0, 1},
+			},
+		}, {
+			name: "OK - Complex Read Requests",
+			reqNodeIds: []string{
+				"ns=1;i=1",
+				"ns=1;i=1",
+				"ns=1;i=2",
+				"ns=1;i=1",
+				"ns=1;i=3",
+				"ns=1;i=2",
+				"ns=1;i=1",
+			},
+			expectedNodeIds: map[string]struct{}{
+				"ns=1;i=1": {},
+				"ns=1;i=2": {},
+				"ns=1;i=3": {},
+			},
+			expectedResultToRequest: map[int][]int{
+				0: {0, 1, 3, 6},
+				1: {2, 5},
+				2: {4},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reqs := make([]sdkModel.CommandRequest, 0, len(tt.reqNodeIds))
+			for _, id := range tt.reqNodeIds {
+				reqs = append(reqs, sdkModel.CommandRequest{Attributes: map[string]interface{}{NODE: id}})
+			}
+
+			nodesToRead, resultToRequest, err := buildNodesToReadRequest(reqs)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			for _, nodes := range nodesToRead {
+				id := nodes.NodeID.String()
+				if _, ok := tt.expectedNodeIds[id]; !ok {
+					t.Fatalf("Node %s not found in request", id)
+				} else {
+					delete(tt.expectedNodeIds, id)
+				}
+			}
+
+			if len(tt.expectedNodeIds) > 0 {
+				t.Fatalf("Unexpected node in request: %+v", nodesToRead)
+			}
+
+			if !reflect.DeepEqual(resultToRequest, tt.expectedResultToRequest) {
+				t.Fatalf("Unexpected result to request: expected %+v; got %+v", tt.expectedResultToRequest, resultToRequest)
+			}
+		})
+	}
+}
+
+func TestBuildReadRequestOnMethod(t *testing.T) {
+	reqs := []sdkModel.CommandRequest{
+		{
+			Attributes: map[string]interface{}{METHOD: true},
+		},
+	}
+	_, _, err := buildNodesToReadRequest(reqs)
+
+	if err == nil {
+		t.Fatalf("Method request should not be allowed")
+	}
+}
+
+func TestBuildReadRequestOnMissingNodeId(t *testing.T) {
+	reqs := []sdkModel.CommandRequest{
+		{
+			Attributes: map[string]interface{}{METHOD: false},
+		},
+	}
+	_, _, err := buildNodesToReadRequest(reqs)
+
+	if err == nil {
+		t.Fatalf("Node Id is missing from properties; error expected")
 	}
 }
