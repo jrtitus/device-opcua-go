@@ -22,6 +22,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.26.0
         env:
           GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          TRIVY_DISABLE_VEX_NOTICE: "true"
         with:
           image-ref: device-opcua:${{ github.sha }}
           format: table
