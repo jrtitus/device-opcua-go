@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/server"
 	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces"
@@ -135,7 +136,11 @@ func (d *Driver) Stop(force bool) error {
 func (d *Driver) HandleReadCommands(deviceName string, protocols map[string]models.ProtocolProperties,
 	reqs []sdkModel.CommandRequest) ([]*sdkModel.CommandValue, error) {
 
-	d.sdk.LoggingClient().Debugf("Driver.HandleReadCommands: protocols: %v resource: %v attributes: %v", protocols, reqs[0].DeviceResourceName, reqs[0].Attributes)
+	startTime := time.Now()
+
+	defer func() {
+		d.sdk.LoggingClient().Debugf("Driver.HandleReadCommands (%v)", time.Since(startTime))
+	}()
 
 	s, ok := d.serverMap[deviceName]
 	if !ok {

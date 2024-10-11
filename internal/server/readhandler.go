@@ -13,66 +13,98 @@ import (
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/result"
 	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/clients/logger"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )
 
-func (s *Server) ProcessReadCommands(reqs []sdkModel.CommandRequest) ([]*sdkModel.CommandValue, error) {
-	var responses = make([]*sdkModel.CommandValue, len(reqs))
+type ResultToRequest map[int][]int
 
-	for i, req := range reqs {
-		res, err := s.handleReadCommandRequest(req)
+func (rr ResultToRequest) buildCommandValues(reqs []sdkModel.CommandRequest, resp *ua.ReadResponse, logger logger.LoggingClient) []*sdkModel.CommandValue {
+	responses := make([]*sdkModel.CommandValue, len(reqs))
+	for i := 0; i < len(resp.Results); i++ {
+		if resp.Results[i].Status != ua.StatusOK {
+			logger.Debugf("Driver.handleReadCommands: Status not OK: %v", resp.Results[i].Status)
+			continue
+		}
+
+		variant := resp.Results[i].Value
+		if variant == nil || variant.Value() == nil {
+			continue
+		}
+
+		if reqIndexes, ok := rr[i]; ok {
+			for _, reqIndex := range reqIndexes {
+				var err error
+				if responses[reqIndex], err = result.NewResult(reqs[i], variant.Value()); err != nil {
+					logger.Errorf("Driver.handleReadCommands: Error: %v", err)
+				}
+			}
+		}
+	}
+
+	return responses
+}
+
+func buildNodesToReadRequest(reqs []sdkModel.CommandRequest) (nodesToRead []*ua.ReadValueID, resultToRequest ResultToRequest, err error) {
+	nodesToRead = make([]*ua.ReadValueID, 0, len(reqs))
+	resultToRequest = make(map[int][]int, len(reqs))
+	nodesIdToResultIndex := make(map[string]int, len(reqs))
+
+	for reqIndex, req := range reqs {
+		if _, isMethod := req.Attributes[METHOD]; isMethod {
+			return nil, nil, fmt.Errorf("not allowed to call command on method: %s", req.DeviceResourceName)
+		}
+
+		id, err := getNodeID(req.Attributes, NODE)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Driver.handleReadCommands: Invalid node id = %v", err)
+		}
+
+		if resultIndex, ok := nodesIdToResultIndex[id.String()]; ok {
+			resultToRequest[resultIndex] = append(resultToRequest[resultIndex], reqIndex)
+		} else {
+			nodesToRead = append(nodesToRead, &ua.ReadValueID{NodeID: id})
+			resultIndex = len(nodesToRead) - 1
+			nodesIdToResultIndex[id.String()] = resultIndex
+			resultToRequest[resultIndex] = []int{reqIndex}
+		}
+	}
+
+	return nodesToRead, resultToRequest, nil
+}
+
+func (s *Server) ProcessReadCommands(reqs []sdkModel.CommandRequest) (responses []*sdkModel.CommandValue, err error) {
+	responses = make([]*sdkModel.CommandValue, len(reqs))
+
+	nodesToRead, resultToRequest, err := buildNodesToReadRequest(reqs)
+	if err != nil {
+		s.sdk.LoggingClient().Error(err.Error())
+		return responses, err
+	}
+
+	request := &ua.ReadRequest{
+		MaxAge:             2000,
+		NodesToRead:        nodesToRead,
+		TimestampsToReturn: ua.TimestampsToReturnBoth,
+	}
+
+	if len(request.NodesToRead) > 0 {
+		if s.client == nil || s.client.State() == opcua.Closed || s.client.State() == opcua.Disconnected {
+			if err := s.Connect(); err != nil {
+				s.sdk.LoggingClient().Errorf("Driver.handleReadCommands: client not initialized: %v", err)
+				return responses, err
+			}
+		}
+
+		resp, err := s.client.Read(s.client.ctx, request)
 		if err != nil {
 			s.sdk.LoggingClient().Errorf("Driver.HandleReadCommands: Handle read commands failed: %v", err)
 			return responses, err
 		}
-		s.sdk.LoggingClient().Infof("Read command finished: %v", res)
-		responses[i] = res
+
+		responses = resultToRequest.buildCommandValues(reqs, resp, s.sdk.LoggingClient())
 	}
 
 	return responses, nil
-}
-
-func (s *Server) handleReadCommandRequest(req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
-	if _, isMethod := req.Attributes[METHOD]; isMethod {
-		return nil, fmt.Errorf("not allowed to call command on method: %s", req.DeviceResourceName)
-	}
-
-	return s.makeReadRequest(req)
-}
-
-func (s *Server) makeReadRequest(req sdkModel.CommandRequest) (*sdkModel.CommandValue, error) {
-	id, err := getNodeID(req.Attributes, NODE)
-	if err != nil {
-		return nil, fmt.Errorf("Driver.handleReadCommands: Invalid node id = %v", err)
-	}
-
-	request := &ua.ReadRequest{
-		MaxAge: 2000,
-		NodesToRead: []*ua.ReadValueID{
-			{NodeID: id},
-		},
-		TimestampsToReturn: ua.TimestampsToReturnBoth,
-	}
-
-	if s.client == nil || s.client.State() == opcua.Closed || s.client.State() == opcua.Disconnected {
-		if err := s.Connect(); err != nil {
-			return nil, fmt.Errorf("Driver.handleReadCommands: client not initialized: %s", err)
-		}
-	}
-
-	resp, err := s.client.Read(s.client.ctx, request)
-	if err != nil {
-		return nil, fmt.Errorf("Driver.handleReadCommands: Read failed: %s", err)
-	}
-	if resp.Results[0].Status != ua.StatusOK {
-		return nil, fmt.Errorf("Driver.handleReadCommands: Status not OK: %v", resp.Results[0].Status)
-	}
-
-	variant := resp.Results[0].Value
-	if variant == nil {
-		return nil, fmt.Errorf("Driver.handleReadCommands: Variant value is nil")
-	}
-
-	return result.NewResult(req, variant.Value())
 }
