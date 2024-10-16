@@ -20,6 +20,14 @@ import (
 
 type ResultToRequest map[int][]int
 
+func createResult(req sdkModel.CommandRequest, variant *ua.Variant, logger logger.LoggingClient) (response *sdkModel.CommandValue) {
+	var err error
+	if response, err = result.NewResult(req, variant.Value()); err != nil {
+		logger.Errorf("Driver.handleReadCommands: Error: %v", err)
+	}
+	return response
+}
+
 func (rr ResultToRequest) buildCommandValues(reqs []sdkModel.CommandRequest, resp *ua.ReadResponse, logger logger.LoggingClient) []*sdkModel.CommandValue {
 	responses := make([]*sdkModel.CommandValue, len(reqs))
 	for i := 0; i < len(resp.Results); i++ {
@@ -35,10 +43,7 @@ func (rr ResultToRequest) buildCommandValues(reqs []sdkModel.CommandRequest, res
 
 		if reqIndexes, ok := rr[i]; ok {
 			for _, reqIndex := range reqIndexes {
-				var err error
-				if responses[reqIndex], err = result.NewResult(reqs[i], variant.Value()); err != nil {
-					logger.Errorf("Driver.handleReadCommands: Error: %v", err)
-				}
+				responses[reqIndex] = createResult(reqs[reqIndex], variant, logger)
 			}
 		}
 	}

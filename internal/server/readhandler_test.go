@@ -14,6 +14,7 @@ import (
 
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
 	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/clients/logger"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/gopcua/opcua"
@@ -441,4 +442,113 @@ func TestBuildReadRequestOnMissingNodeId(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Node Id is missing from properties; error expected")
 	}
+}
+
+func TestBuildCommandValues(t *testing.T) {
+	reqs := []sdkModel.CommandRequest{
+		{
+			DeviceResourceName: "Res1",
+			Type:               common.ValueTypeInt32,
+		},
+		{
+			DeviceResourceName: "Res2",
+			Type:               common.ValueTypeInt32,
+		},
+		{
+			DeviceResourceName: "Res3",
+			Type:               common.ValueTypeInt32,
+		},
+	}
+
+	lc := logger.NewMockClient()
+
+	t.Run("Read on one node", func(t *testing.T) {
+		var resultToRequest ResultToRequest = map[int][]int{0: {0, 1, 2}}
+
+		uaResponse := &ua.ReadResponse{
+			Results: []*ua.DataValue{
+				{
+					Value: ua.MustVariant(int32(1)),
+				},
+			},
+		}
+
+		commandValues := resultToRequest.buildCommandValues(reqs, uaResponse, lc)
+
+		if len(commandValues) != 3 {
+			t.Fatalf("Expected number of command values 3; got %d;", len(commandValues))
+		}
+
+		if commandValues[0].DeviceResourceName != "Res1" {
+			t.Fatalf("Expected device resource name [0] Res1; got %s", commandValues[0].DeviceResourceName)
+		}
+
+		if commandValues[1].DeviceResourceName != "Res2" {
+			t.Fatalf("Expected device resource name [1] Res2; got %s", commandValues[1].DeviceResourceName)
+		}
+
+		if commandValues[2].DeviceResourceName != "Res3" {
+			t.Fatalf("Expected device resource name [2] Res3; got %s", commandValues[2].DeviceResourceName)
+		}
+
+		if commandValues[0].Value != int32(1) {
+			t.Fatalf("Expected device resource value [0] 1; got %v", commandValues[0].Value)
+		}
+
+		if commandValues[1].Value != int32(1) {
+			t.Fatalf("Expected device resource value [1] 1; got %v", commandValues[1].Value)
+		}
+
+		if commandValues[2].Value != int32(1) {
+			t.Fatalf("Expected device resource value [2] 1; got %v", commandValues[2].Value)
+		}
+
+	})
+
+	t.Run("Read on multiple nodes", func(t *testing.T) {
+		var resultToRequest ResultToRequest = map[int][]int{0: {0}, 1: {1}, 2: {2}}
+
+		uaResponse := &ua.ReadResponse{
+			Results: []*ua.DataValue{
+				{
+					Value: ua.MustVariant(int32(1)),
+				}, {
+					Value: ua.MustVariant(int32(2)),
+				}, {
+					Value: ua.MustVariant(int32(3)),
+				},
+			},
+		}
+
+		commandValues := resultToRequest.buildCommandValues(reqs, uaResponse, lc)
+
+		if len(commandValues) != 3 {
+			t.Fatalf("Expected number of command values 3; got %d;", len(commandValues))
+		}
+
+		if commandValues[0].DeviceResourceName != "Res1" {
+			t.Fatalf("Expected device resource name [0] Res1; got %s", commandValues[0].DeviceResourceName)
+		}
+
+		if commandValues[1].DeviceResourceName != "Res2" {
+			t.Fatalf("Expected device resource name [1] Res2; got %s", commandValues[1].DeviceResourceName)
+		}
+
+		if commandValues[2].DeviceResourceName != "Res3" {
+			t.Fatalf("Expected device resource name [2] Res3; got %s", commandValues[2].DeviceResourceName)
+		}
+
+		if commandValues[0].Value != int32(1) {
+			t.Fatalf("Expected device resource value [0] 1; got %v", commandValues[0].Value)
+		}
+
+		if commandValues[1].Value != int32(2) {
+			t.Fatalf("Expected device resource value [1] 2; got %v", commandValues[1].Value)
+		}
+
+		if commandValues[2].Value != int32(3) {
+			t.Fatalf("Expected device resource value [2] 3; got %v", commandValues[2].Value)
+		}
+
+	})
 }
