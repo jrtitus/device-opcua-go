@@ -11,7 +11,7 @@ require (
 	github.com/gopcua/opcua v0.5.3
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/spf13/cast v1.7.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 )
 
 require (
