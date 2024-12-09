@@ -1,14 +1,13 @@
 module github.com/edgexfoundry/device-opcua-go
 
 go 1.21
-
-toolchain go1.21.4
+toolchain go1.22.5
 
 require (
 	github.com/edgexfoundry/device-sdk-go/v3 v3.1.1
 	github.com/edgexfoundry/go-mod-core-contracts/v3 v3.1.0
 	github.com/go-playground/validator/v10 v10.23.0
-	github.com/gopcua/opcua v0.5.3
+	github.com/gopcua/opcua v0.6.0
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/spf13/cast v1.7.0
 	github.com/stretchr/testify v1.10.0
@@ -60,7 +59,6 @@ require (
 	github.com/nats-io/nats.go v1.31.0 // indirect
 	github.com/nats-io/nkeys v0.4.6 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.2.0 // indirect
