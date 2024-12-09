@@ -9,7 +9,7 @@ require (
 	github.com/edgexfoundry/go-mod-core-contracts/v3 v3.1.0
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/gopcua/opcua v0.5.3
-	github.com/labstack/echo/v4 v4.12.0
+	github.com/labstack/echo/v4 v4.13.0
 	github.com/spf13/cast v1.7.0
 	github.com/stretchr/testify v1.10.0
 )
@@ -35,7 +35,6 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-redis/redis/v7 v7.4.1 // indirect
-	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/consul/api v1.25.1 // indirect
