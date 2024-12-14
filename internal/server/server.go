@@ -116,7 +116,7 @@ func (s *Server) initClient() error {
 	}
 
 	ep, err := opcua.SelectEndpoint(endpoints, s.config.Policy, ua.MessageSecurityModeFromString(s.config.Mode))
-	if ep == nil || err != nil {
+	if err != nil {
 		s.sdk.LoggingClient().Error(err.Error())
 		return fmt.Errorf("[%s] failed to find suitable endpoint", s.deviceName)
 	}
