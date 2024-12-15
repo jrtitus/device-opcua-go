@@ -67,10 +67,12 @@ func (s *Server) configureMonitoredItems(sub *opcua.Subscription) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for i, resource := range s.config.Resources {
+	var i uint32
+	for _, resource := range s.config.Resources {
 		deviceResource, ok := s.sdk.DeviceResource(s.deviceName, resource)
 		if !ok {
 			s.sdk.LoggingClient().Warnf("[%s] unable to find resource with name %s", s.deviceName, resource)
+			i++
 			continue
 		}
 
@@ -80,7 +82,7 @@ func (s *Server) configureMonitoredItems(sub *opcua.Subscription) error {
 		}
 
 		// arbitrary client handle for the monitoring item
-		handle := uint32(i + 42)
+		handle := i + 42
 		// map the client handle so we know what the value returned represents
 		s.resourceMap[handle] = resource
 		miCreateRequest := opcua.NewMonitoredItemCreateRequestWithDefaults(id, ua.AttributeIDValue, handle)
@@ -90,6 +92,7 @@ func (s *Server) configureMonitoredItems(sub *opcua.Subscription) error {
 		}
 
 		s.sdk.LoggingClient().Infof("[%s] start incoming data listening for %s", s.deviceName, resource)
+		i++
 	}
 
 	return nil
