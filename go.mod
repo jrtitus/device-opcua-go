@@ -6,7 +6,7 @@ require (
 	github.com/edgexfoundry/device-sdk-go/v3 v3.1.1
 	github.com/edgexfoundry/go-mod-core-contracts/v3 v3.1.0
 	github.com/go-playground/validator/v10 v10.24.0
-	github.com/gopcua/opcua v0.6.2
+	github.com/gopcua/opcua v0.6.3
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
