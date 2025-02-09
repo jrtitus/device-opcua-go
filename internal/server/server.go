@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
+	"github.com/edgexfoundry/device-sdk-go/v4/pkg/interfaces"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/models"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )

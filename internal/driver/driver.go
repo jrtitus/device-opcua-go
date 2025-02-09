@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/server"
-	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
+	"github.com/edgexfoundry/device-sdk-go/v4/pkg/interfaces"
+	sdkModel "github.com/edgexfoundry/device-sdk-go/v4/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/models"
 )
 
 var once sync.Once
@@ -43,7 +43,7 @@ func (d *Driver) Initialize(sdk interfaces.DeviceServiceSDK) error {
 	d.sdk = sdk
 
 	// Define custom API endpoints
-	if err := d.sdk.AddCustomRoute("/api/v3/call", interfaces.Authenticated, handleMethodCall, http.MethodPost); err != nil {
+	if err := d.sdk.AddCustomRoute("/api/v4/call", interfaces.Authenticated, handleMethodCall, http.MethodPost); err != nil {
 		return fmt.Errorf("unable to add custom route to device service: %v", err)
 	}
 

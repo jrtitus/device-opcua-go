@@ -9,7 +9,7 @@ package server
 import (
 	"encoding/json"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/models"
 	"github.com/go-playground/validator/v10"
 )
 

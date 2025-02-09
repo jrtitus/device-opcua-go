@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
-	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces/mocks"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
+	"github.com/edgexfoundry/device-sdk-go/v4/pkg/interfaces/mocks"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/models"
 	"github.com/stretchr/testify/assert"
 )
 
