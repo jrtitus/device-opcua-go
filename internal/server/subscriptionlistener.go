@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/result"
-	sdkModels "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	sdkModels "github.com/edgexfoundry/device-sdk-go/v4/pkg/models"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )

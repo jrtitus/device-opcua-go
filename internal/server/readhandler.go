@@ -12,8 +12,8 @@ import (
 	"fmt"
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/result"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/clients/logger"
+	sdkModel "github.com/edgexfoundry/device-sdk-go/v4/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/clients/logger"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )

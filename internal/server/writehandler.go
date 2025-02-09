@@ -12,7 +12,7 @@ import (
 	"fmt"
 
 	"github.com/edgexfoundry/device-opcua-go/pkg/command"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
+	sdkModel "github.com/edgexfoundry/device-sdk-go/v4/pkg/models"
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
 )

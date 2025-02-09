@@ -14,9 +14,9 @@ import (
 
 	"github.com/edgexfoundry/device-opcua-go/internal/server"
 	"github.com/edgexfoundry/device-opcua-go/internal/test"
-	"github.com/edgexfoundry/device-sdk-go/v3/pkg/interfaces/mocks"
-	sdkModel "github.com/edgexfoundry/device-sdk-go/v3/pkg/models"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
+	"github.com/edgexfoundry/device-sdk-go/v4/pkg/interfaces/mocks"
+	sdkModel "github.com/edgexfoundry/device-sdk-go/v4/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/v4/models"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -196,7 +196,7 @@ func TestDriver_Initialize(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d, dsMock := newMockDriver(t)
-			dsMock.On("AddCustomRoute", "/api/v3/call", mock.Anything, mock.AnythingOfType("func(echo.Context) error"), http.MethodPost).Return(tt.err)
+			dsMock.On("AddCustomRoute", "/api/v4/call", mock.Anything, mock.AnythingOfType("func(echo.Context) error"), http.MethodPost).Return(tt.err)
 			if tt.err == nil {
 				dsMock.On("Devices").Return(tt.devices)
 			}

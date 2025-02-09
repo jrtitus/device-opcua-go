@@ -24,7 +24,7 @@ function cleanup {
 trap cleanup TERM QUIT INT
 
 cd $CMD
-exec -a edgex-device-opcua ./device-opcua -cp -d &
+exec -a edgex-device-opcua ./device-opcua -cp -d -o &
 cd $DIR
 
 while : ; do sleep 1 ; done
